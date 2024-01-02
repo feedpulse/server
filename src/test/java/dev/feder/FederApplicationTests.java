@@ -1,10 +1,10 @@
-package dev.feder.server;
+package dev.feder;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-class ServerApplicationTests {
+class FederApplicationTests {
 
     @Test
     void contextLoads() {

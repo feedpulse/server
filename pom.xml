@@ -36,6 +36,25 @@
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>jakarta.persistence</groupId>
+            <artifactId>jakarta.persistence-api</artifactId>
+            <version>3.1.0</version>
+        </dependency>
+
+        <!-- https://mvnrepository.com/artifact/com.rometools/rome -->
+        <!-- ROME is a set of Atom/RSS Java utilities that make it easy to work in Java with most syndication formats. -->
+        <dependency>
+            <groupId>com.rometools</groupId>
+            <artifactId>rome</artifactId>
+            <version>2.1.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>io.github.cdimascio</groupId>
+            <artifactId>essence</artifactId>
+            <version>0.13.0</version>
+        </dependency>
     </dependencies>
 
     <build>
