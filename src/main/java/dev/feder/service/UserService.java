@@ -1,32 +1,30 @@
 package dev.feder.service;
 
+import dev.feder.dto.request.UserUpdateRequestDTO;
+import dev.feder.exceptions.InvalidEmailException;
+import dev.feder.exceptions.UserNotFoundInDbException;
+import dev.feder.exceptions.WrongPasswordException;
 import dev.feder.model.Role;
 import dev.feder.model.SpringUserDetails;
 import dev.feder.model.User;
 import dev.feder.repository.RoleRepository;
 import dev.feder.repository.UserRepository;
 import dev.feder.util.JwtUtil;
+import dev.feder.validation.EmailValidator;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationContext;
 import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.util.Collections;
-import java.util.Map;
+import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 
 
 @Service
-public class UserService implements UserDetailsService {
+public class UserService {
 
     @Autowired
     AuthenticationManager authenticationManager;
@@ -34,7 +32,6 @@ public class UserService implements UserDetailsService {
     private JwtUtil jwtUtil;
     private UserRepository userRepository;
     private RoleRepository roleRepository;
-
     private PasswordEncoder passwordEncoder;
 
 
@@ -45,75 +42,75 @@ public class UserService implements UserDetailsService {
         this.passwordEncoder = passwordEncoder;
     }
 
-    public User createUser(Map<String, String> params) {
-        String email = params.getOrDefault("email", null);
-        if (email == null) throw new IllegalArgumentException("Email is required");
+    public User updateUser(Long id, UserUpdateRequestDTO userUpdateRequestDTO) throws UserNotFoundInDbException, InvalidEmailException, WrongPasswordException {
+        User updatedUser = getUserById(id);
 
-        String username = email; //params.getOrDefault("username", null);
-        if (username == null) throw new IllegalArgumentException("Username is required");
-
-        String password = params.getOrDefault("password", null);
-        if (password == null) throw new IllegalArgumentException("Password is required");
-
-        return createUser(email, username, password);
-    }
-
-
-    public User createUser(@NonNull String email, @NonNull String username, @NonNull String password) {
-        if (userRepository.findByEmail(email).isPresent()) {
-            throw new IllegalArgumentException("Email already exists");
-        }
-        if (userRepository.findByUsername(username).isPresent()) {
-            throw new IllegalArgumentException("Username already exists");
+        String email = userUpdateRequestDTO.getEmail().orElse(null);
+        if (email != null) {
+            if (!EmailValidator.isValid(email)) {
+                throw new InvalidEmailException(email);
+            }
+            updatedUser.setEmail(email);
         }
 
-        password = passwordEncoder.encode(password);
-        Role role = roleRepository.findByName(dev.feder.model.enums.Role.ROLE_USER).orElseThrow(
-                () -> new RuntimeException("Role not found")
-        );
-        Set<Role> roles = Collections.singleton(role);
-        User user = new User(username, password, email, roles);
-        return userRepository.save(user);
+        String password = userUpdateRequestDTO.getPassword().orElse(null);
+        String newPassword = userUpdateRequestDTO.getNewPassword().orElse(null);
+        if (password != null && newPassword != null) {
+            if (!passwordEncoder.matches(password, updatedUser.getPassword())) {
+                throw new WrongPasswordException();
+            }
+            updatedUser.setPassword(passwordEncoder.encode(newPassword));
+        }
+
+        List<Role> roles = userUpdateRequestDTO.getRoles().orElse(null);
+        if (roles != null && !roles.isEmpty()) {
+            updatedUser.getRoles().clear();
+            for (Role role : roles) {
+                Optional<Role> dbRole = roleRepository.findByName(role.getName());
+                if (dbRole.isPresent() && Objects.equals(role.getId(), dbRole.get().getId())) {
+                    updatedUser.getRoles().add(dbRole.get());
+                }
+            }
+        }
+        updatedUser = userRepository.save(updatedUser);
+        return updatedUser;
     }
 
-    public String loginUser(Map<String, String> params) {
-        String email = params.getOrDefault("email", null);
-        if (email == null) throw new IllegalArgumentException("Email is required");
-
-        String password = params.getOrDefault("password", null);
-        if (password == null) throw new IllegalArgumentException("Password is required");
-
-        return loginUser(email, password);
+    public User updateUser(UserUpdateRequestDTO userUpdateRequestDTO) throws UserNotFoundInDbException, InvalidEmailException, WrongPasswordException {
+        User updatedUser = getCurrentUser();
+        updatedUser = updateUser(updatedUser.getId(), userUpdateRequestDTO);
+        return updatedUser;
     }
 
-    public String loginUser(@NonNull String email, @NonNull String password) {
-
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(email, password));
-
-        SecurityContextHolder.getContext().setAuthentication(authentication);
-        String jwt = jwtUtil.generateToken(authentication);
-
+    @NonNull
+    public User getCurrentUser() throws UserNotFoundInDbException {
         SpringUserDetails userDetails = (SpringUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-
-        return jwt;
+        return getUserById(userDetails.getId());
     }
 
-    public Optional<User> getUserByUsername(String username) {
-        return userRepository.findByUsername(username);
+    @NonNull
+    public User getUserByToken(String token) throws UserNotFoundInDbException {
+        String username = jwtUtil.extractUsername(token);
+        return getUserByUsername(username);
     }
 
+    @NonNull
+    public User getUserById(Long id) throws UserNotFoundInDbException {
+        return userRepository.findById(id).orElseThrow(
+                () -> new UserNotFoundInDbException("ID")
+        );
+    }
 
-    @Override
-    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() ->
-                        new UsernameNotFoundException(String.format("User with username %s not found", username))
-                );
-        return new org.springframework.security.core.userdetails.User(
-                user.getUsername(),
-                user.getPassword(),
-                Collections.emptyList()
+    @NonNull
+    public User getUserByEmail(String email) throws UserNotFoundInDbException {
+        return userRepository.findByEmail(email).orElseThrow(
+                () -> new UserNotFoundInDbException("Email"));
+    }
+
+    @NonNull
+    public User getUserByUsername(String username) throws UserNotFoundInDbException {
+        return userRepository.findByUsername(username).orElseThrow(
+                () -> new UserNotFoundInDbException("Username")
         );
     }
 

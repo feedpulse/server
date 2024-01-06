@@ -1,6 +1,7 @@
 package dev.feder.controller;
 
 import dev.feder.model.User;
+import dev.feder.service.AuthService;
 import dev.feder.service.UserService;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
@@ -11,9 +12,9 @@ import java.util.Map;
 @RequestMapping("/auth")
 public class AuthController {
 
-    private final UserService userService;
+    private final AuthService userService;
 
-    public AuthController(UserService userService) {
+    public AuthController(AuthService userService) {
         this.userService = userService;
     }
 
