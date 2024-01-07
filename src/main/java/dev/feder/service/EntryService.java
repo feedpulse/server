@@ -5,6 +5,7 @@ import dev.feder.exceptions.InvalidUuidException;
 import dev.feder.exceptions.NoSuchEntryException;
 import dev.feder.model.Entry;
 import dev.feder.model.Feed;
+import dev.feder.model.User;
 import dev.feder.repository.EntryRepository;
 import dev.feder.util.UuidUtil;
 import io.github.cdimascio.essence.EssenceResult;
@@ -23,9 +24,11 @@ import java.util.UUID;
 public class EntryService {
 
     private final EntryRepository entryRepository;
+    private final UserService userService;
 
-    public EntryService(@NonNull EntryRepository entryRepository) {
+    public EntryService(@NonNull EntryRepository entryRepository, @NonNull UserService userService) {
         this.entryRepository = entryRepository;
+        this.userService = userService;
     }
 
     public void addEntry(SyndEntry entry, Feed feed, EssenceResult data) {
@@ -52,22 +55,29 @@ public class EntryService {
         UUID feedUuid = UuidUtil.fromString(feedUuidString);
         var sort = sortOrder ? Sort.Direction.DESC : Sort.Direction.ASC;
         Pageable pageable = PageRequest.of(offset, limit, sort, "pubDate");
-        return entryRepository.findAllByFeedUuid(feedUuid, pageable).toList();
+        return entryRepository.findEntriesByFeedUuidAndUsersId(feedUuid, userService.getCurrentUser().getId(), pageable).toList();
     }
 
     public List<Entry> getEntries(Integer limit, Integer offset, Boolean sortOrder) {
+        User user = userService.getCurrentUser();
         var sort = sortOrder ? Sort.Direction.DESC : Sort.Direction.ASC;
         Pageable pageable = PageRequest.of(offset, limit, sort, "pubDate");
-        return entryRepository.findAll(pageable).toList();
+        return entryRepository.findEntriesByUsersId(user.getId(), pageable).toList();
     }
 
     public @NonNull Entry getEntry(@Nullable String uuidString) throws InvalidUuidException, NoSuchEntryException {
+        User user = userService.getCurrentUser();
         UUID uuid = UuidUtil.fromString(uuidString);
-        Optional<Entry> entry = entryRepository.findById(uuid);
+        Optional<Entry> entry = entryRepository.findEntryByUuidAndUsersId(uuid, user.getId());
         if (entry.isEmpty()) {
             throw new NoSuchEntryException("No entry found with UUID " + uuidString);
         }
         return entry.get();
+    }
+
+    public Optional<Entry> getUserEntryByLink(String link) {
+        User user = userService.getCurrentUser();
+        return entryRepository.findEntryByLinkAndUsersId(link, user.getId());
     }
 
     public Optional<Entry> getEntryByLink(String link) {
