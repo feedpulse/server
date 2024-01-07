@@ -11,7 +11,6 @@ import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.UUID;
 
 @RestController
 @RequestMapping("/feeds")
@@ -53,8 +52,8 @@ public class FeedController {
 
     @PostMapping()
     @ResponseStatus(HttpStatus.CREATED)
-    public UUID addFeed(@RequestParam String feedUrl) throws MalformedFeedException {
-        UUID feedUuid = feedService.addFeed(feedUrl);
-        return feedUuid;
+    public Feed addFeed(@RequestParam String feedUrl) throws MalformedFeedException {
+        Feed feed = feedService.addFeed(feedUrl);
+        return feed;
     }
 }

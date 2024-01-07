@@ -10,10 +10,10 @@ import java.util.Optional;
 
 public class UserUpdateRequestDTO implements Serializable {
 
-    private Optional<String> email;
-    private Optional<String> password;
-    private Optional<String> newPassword;
-    private Optional<List<Role>> roles;
+    private Optional<String> email = Optional.empty();
+    private Optional<String> password = Optional.empty();
+    private Optional<String> newPassword = Optional.empty();
+    private Optional<List<Role>> roles = Optional.empty();
 
     public UserUpdateRequestDTO() {
     }

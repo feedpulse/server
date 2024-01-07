@@ -7,6 +7,7 @@ import dev.feder.exceptions.InvalidUuidException;
 import dev.feder.exceptions.MalformedFeedException;
 import dev.feder.exceptions.NoSuchFeedException;
 import dev.feder.model.Feed;
+import dev.feder.model.User;
 import dev.feder.repository.FeedRepository;
 import dev.feder.util.FeedUtil;
 import dev.feder.util.UuidUtil;
@@ -24,11 +25,13 @@ import java.util.UUID;
 public class FeedService {
 
     private final FeedRepository feedRepository;
+    private final UserService userService;
     private final EntryService entryService;
 
-    public FeedService(FeedRepository feedRepository, EntryService entryService) {
+    public FeedService(FeedRepository feedRepository, EntryService entryService, UserService userService) {
         this.feedRepository = feedRepository;
         this.entryService = entryService;
+        this.userService = userService;
     }
 
     // WARNING: this method is only for internal use and should not be exposed to the frontend
@@ -37,23 +40,34 @@ public class FeedService {
     }
 
     public List<Feed> getFeeds(Integer limit, Integer offset, Boolean sortOrder) {
+        User user = userService.getCurrentUser();
         var sort = sortOrder ? Sort.Direction.DESC : Sort.Direction.ASC;
         Pageable pageable = PageRequest.of(offset, limit, sort, "pubDate");
-        return feedRepository.findAll(pageable).toList();
+        return feedRepository.findFeedsByUsersId(user.getId(), pageable).toList();
     }
 
     public Feed getFeed(String uuidString) throws InvalidUuidException, NoSuchFeedException{
         UUID uuid = UuidUtil.fromString(uuidString);
-        Optional<Feed> feed = feedRepository.findById(uuid);
+        User user = userService.getCurrentUser();
+        Optional<Feed> feed = feedRepository.findFeedByUuidAndUsersId(uuid, user.getId());
         if (feed.isEmpty()) {
             throw new NoSuchFeedException(uuidString);
         }
         return feed.get();
     }
 
-    public UUID addFeed(String feedUrl) throws MalformedFeedException {
+    public Feed addFeed(String feedUrl) throws MalformedFeedException {
+        User user = userService.getCurrentUser();
         Optional<Feed> existingFeed = feedRepository.findByFeedUrl(feedUrl);
-        if (existingFeed.isPresent()) return existingFeed.get().getUuid();
+        if (existingFeed.isPresent()) {
+            // if the feed already exists, add it to the user's feeds
+            if (!user.getFeeds().contains(existingFeed.get())) {
+                // if the user does not already have the feed, add it
+                user.getFeeds().add(existingFeed.get());
+            }
+            userService.saveUser(user);
+            return existingFeed.get();
+        }
         Feed.FeedBuilder feedBuilder = new Feed.FeedBuilder();
         try {
             SyndFeed syndFeed = FeedUtil.fetchFeed(feedUrl);
@@ -69,7 +83,9 @@ public class FeedService {
         feedBuilder.setFeedUrl(feedUrl);
         Feed feed = feedBuilder.createFeed();
         feed = feedRepository.save(feed);
-        return feed.getUuid();
+        user.getFeeds().add(feed);
+        userService.saveUser(user);
+        return feed;
     }
 
     public void deleteFeed(Feed feed) {

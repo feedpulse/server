@@ -51,6 +51,7 @@ public class UserService {
                 throw new InvalidEmailException(email);
             }
             updatedUser.setEmail(email);
+            updatedUser.setUsername(email);
         }
 
         String password = userUpdateRequestDTO.getPassword().orElse(null);
@@ -114,5 +115,7 @@ public class UserService {
         );
     }
 
-
+    public void saveUser(User user) {
+        userRepository.save(user);
+    }
 }

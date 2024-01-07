@@ -1,13 +1,14 @@
 package dev.feder.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
-import org.hibernate.annotations.UuidGenerator;
 import org.springframework.lang.NonNull;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
-import java.util.UUID;
 
 @Entity
 @Table(name = "users")
@@ -35,11 +36,18 @@ public class User implements Serializable {
             inverseJoinColumns = @JoinColumn(name = "role_id"))
     private Set<Role> roles = new HashSet<>();
 
-    public User(@NonNull String username, @NonNull String password, @NonNull String email, Set<Role> roles) {
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(name = "user_feeds",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "feed_id"))
+    private List<Feed> feeds = new ArrayList<>();
+
+    public User(@NonNull String username, @NonNull String password, @NonNull String email, Set<Role> roles, List<Feed> feeds) {
         this.username = username;
         this.password = password;
         this.email = email;
         this.roles = roles;
+        this.feeds = feeds;
     }
 
     protected User() {
@@ -85,14 +93,23 @@ public class User implements Serializable {
         this.roles.add(role);
     }
 
+    public List<Feed> getFeeds() {
+        return feeds;
+    }
+
+    public void setFeeds(List<Feed> feeds) {
+        this.feeds = feeds;
+    }
+
     @Override
     public String toString() {
         return "User{" +
                 "id=" + id +
                 ", username='" + username + '\'' +
-                ", password='" + password + '\'' +
+//                ", password='" + password + '\'' +
                 ", email='" + email + '\'' +
                 ", roles='" + roles + '\'' +
+                ", feeds='" + feeds + '\'' +
                 '}';
     }
 
@@ -112,6 +129,8 @@ public class User implements Serializable {
         private String email;
         @NonNull
         private Set<Role> roles;
+        @NonNull
+        private List<Feed> feeds;
 
         public UserBuilder setUsername(@NonNull String username) {
             this.username = username;
@@ -138,8 +157,13 @@ public class User implements Serializable {
             return this;
         }
 
+        public UserBuilder setFeeds(@NonNull List<Feed> feeds) {
+            this.feeds = feeds;
+            return this;
+        }
+
         public User build() {
-            return new User(username, password, email, roles);
+            return new User(username, password, email, roles, feeds);
         }
     }
 }
