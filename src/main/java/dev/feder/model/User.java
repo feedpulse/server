@@ -42,12 +42,16 @@ public class User implements Serializable {
             inverseJoinColumns = @JoinColumn(name = "feed_id"))
     private List<Feed> feeds = new ArrayList<>();
 
-    public User(@NonNull String username, @NonNull String password, @NonNull String email, Set<Role> roles, List<Feed> feeds) {
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    private List<UserEntryInteraction> userEntryInteractions = new ArrayList<>();
+
+    public User(@NonNull String username, @NonNull String password, @NonNull String email, Set<Role> roles, List<Feed> feeds, List<UserEntryInteraction> userEntryInteractions) {
         this.username = username;
         this.password = password;
         this.email = email;
         this.roles = roles;
         this.feeds = feeds;
+        this.userEntryInteractions = userEntryInteractions;
     }
 
     protected User() {
@@ -101,6 +105,14 @@ public class User implements Serializable {
         this.feeds = feeds;
     }
 
+    public List<UserEntryInteraction> getUserEntryInteractions() {
+        return userEntryInteractions;
+    }
+
+    public void setUserEntryInteractions(List<UserEntryInteraction> userEntryInteractions) {
+        this.userEntryInteractions = userEntryInteractions;
+    }
+
     @Override
     public String toString() {
         return "User{" +
@@ -110,6 +122,7 @@ public class User implements Serializable {
                 ", email='" + email + '\'' +
                 ", roles='" + roles + '\'' +
                 ", feeds='" + feeds + '\'' +
+                ", userEntryInteractions='" + userEntryInteractions + '\'' +
                 '}';
     }
 
@@ -131,6 +144,8 @@ public class User implements Serializable {
         private Set<Role> roles;
         @NonNull
         private List<Feed> feeds;
+        @NonNull
+        private List<UserEntryInteraction> userEntryInteractions;
 
         public UserBuilder setUsername(@NonNull String username) {
             this.username = username;
@@ -162,8 +177,13 @@ public class User implements Serializable {
             return this;
         }
 
+        public UserBuilder setUserEntryInteractions(@NonNull List<UserEntryInteraction> userEntryInteractions) {
+            this.userEntryInteractions = userEntryInteractions;
+            return this;
+        }
+
         public User build() {
-            return new User(username, password, email, roles, feeds);
+            return new User(username, password, email, roles, feeds, userEntryInteractions);
         }
     }
 }

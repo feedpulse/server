@@ -1,5 +1,6 @@
 package dev.feder.controller;
 
+import dev.feder.dto.request.EntryInteractionUpdateDTO;
 import dev.feder.exceptions.InvalidUuidException;
 import dev.feder.exceptions.NoSuchEntryException;
 import dev.feder.model.Entry;
@@ -33,6 +34,12 @@ public class EntryController {
     @GetMapping("/{uuid}")
     public Entry getEntry(@PathVariable String uuid) throws InvalidUuidException, NoSuchEntryException {
         return entryService.getEntry(uuid);
+    }
+
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @RequestMapping(value = "/{uuid}", method = {RequestMethod.PATCH, RequestMethod.PUT})
+    public void updateEntry(@PathVariable String uuid, @RequestBody EntryInteractionUpdateDTO entry) throws InvalidUuidException, NoSuchEntryException {
+        entryService.updateEntry(uuid, entry.isRead(), entry.isFavorite(), entry.isBookmark());
     }
 
 }

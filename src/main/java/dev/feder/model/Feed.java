@@ -61,6 +61,7 @@ public class Feed implements Serializable {
     protected Feed() {
     }
 
+    @NonNull
     public UUID getUuid() {
         return uuid;
     }

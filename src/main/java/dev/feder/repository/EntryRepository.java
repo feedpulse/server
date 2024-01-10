@@ -1,5 +1,6 @@
 package dev.feder.repository;
 
+import dev.feder.dto.EntryDTO;
 import dev.feder.model.Entry;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

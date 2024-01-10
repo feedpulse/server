@@ -79,7 +79,8 @@ public class FeedUtil {
             return inputStream;
         } catch (Exception e) {
             System.err.println("Error while fetching URL: " + url);
-            throw new RuntimeException(e);
+            throw new RuntimeException(e); // TODO: handle exception
+            // a 429 status code would cause this exception
         }
     }
 }
