@@ -16,14 +16,17 @@ public class UserEntryInteraction implements Serializable {
     private User user;
 
     @ManyToOne
-    @JoinColumn(name = "entry_id")
+    @JoinColumn(name = "entry_uuid")
     private Entry entry;
 
-    private boolean read = false;
+    @Column(name = "is_bookmark")
+    private Boolean bookmark;
 
-    private boolean favorite = false;
+    @Column(name = "is_favorite")
+    private Boolean favorite;
 
-    private boolean bookmark = false;
+    @Column(name = "is_read") // Renamed from `read` to `is_read`
+    private Boolean read;
 
     public UserEntryInteraction() {
     }
