@@ -1,5 +1,6 @@
 package dev.feder.model;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import org.hibernate.annotations.UuidGenerator;
 import org.springframework.lang.NonNull;
@@ -58,6 +59,7 @@ public class Entry implements Serializable {
 
     @NonNull
     @ManyToMany
+    @JsonBackReference
     @JoinTable(name = "entry_keyword", joinColumns = @JoinColumn(name = "entry_uuid"), inverseJoinColumns = @JoinColumn(name = "keyword_id"))
     private Set<Keyword> keywords = Set.of();
 

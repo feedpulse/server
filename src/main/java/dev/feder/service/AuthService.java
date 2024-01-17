@@ -63,7 +63,7 @@ public class AuthService {
                 () -> new RuntimeException("Role not found")
         );
         Set<Role> roles = Collections.singleton(role);
-        User user = new User(username, password, email, roles, Collections.emptyList());
+        User user = new User(username, password, email, roles, Collections.emptyList(), Collections.emptyList());
         return userRepository.save(user);
     }
 

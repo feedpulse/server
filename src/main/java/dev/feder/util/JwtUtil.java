@@ -13,9 +13,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
 import java.security.Key;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Function;
 
 @Component
@@ -28,7 +26,7 @@ public class JwtUtil {
     private int jwtExpirationMs;
 
     private static final String SECRET = "your-secret-key"; // Replace with a secure secret key
-    private final long EXPIRATION_TIME = 900_000; // 15 minutes
+    private final long EXPIRATION_TIME = 10_800_000; // 3 hours
 
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
@@ -47,8 +45,8 @@ public class JwtUtil {
         return Jwts.parser().setSigningKey(key()).parseClaimsJws(token).getBody();
     }
 
-    public String generateToken(@NonNull String username) {
-        Map<String, Object> claims = new HashMap<>();
+    public String generateToken(@NonNull String username, Map<String, Object> claims) {
+        if (claims == null) claims = new HashMap<>();
         return createToken(claims, username);
     }
 
@@ -59,7 +57,12 @@ public class JwtUtil {
 
     public String generateToken(Authentication authentication) {
         SpringUserDetails user = (SpringUserDetails) authentication.getPrincipal();
-        return generateToken(user.getUsername());
+        return generateToken(user);
+    }
+
+    public String generateToken(SpringUserDetails springUserDetails) {
+        Map<String, Object> claims = Collections.singletonMap("roles", springUserDetails.getAuthorities());
+        return generateToken(springUserDetails.getUsername(), claims);
     }
 
     private String createToken(Map<String, Object> claims, String subject) {

@@ -1,5 +1,6 @@
 package dev.feder.model;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 
 import java.io.Serializable;
@@ -15,6 +16,7 @@ public class Keyword implements Serializable {
     @Column(unique = true)
     private String keyword;
 
+    @JsonManagedReference
     @ManyToMany(mappedBy = "keywords")
     private Set<Entry> entry;
 
