@@ -9,7 +9,7 @@ import dev.feder.exceptions.NoSuchFeedException;
 import dev.feder.model.Feed;
 import dev.feder.model.User;
 import dev.feder.repository.FeedRepository;
-import dev.feder.util.FeedUtil;
+import dev.feder.util.FetchUtil;
 import dev.feder.util.UuidUtil;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -27,11 +27,13 @@ public class FeedService {
     private final FeedRepository feedRepository;
     private final UserService userService;
     private final EntryService entryService;
+    private final FeedFetchService feedFetchService;
 
-    public FeedService(FeedRepository feedRepository, EntryService entryService, UserService userService) {
+    public FeedService(FeedRepository feedRepository, EntryService entryService, UserService userService , FeedFetchService feedFetchService) {
         this.feedRepository = feedRepository;
         this.entryService = entryService;
         this.userService = userService;
+        this.feedFetchService = feedFetchService;
     }
 
     // WARNING: this method is only for internal use and should not be exposed to the frontend
@@ -68,23 +70,26 @@ public class FeedService {
             userService.saveUser(user);
             return existingFeed.get();
         }
+
         Feed.FeedBuilder feedBuilder = new Feed.FeedBuilder();
         try {
-            SyndFeed syndFeed = FeedUtil.fetchFeed(feedUrl);
+            SyndFeed syndFeed = feedFetchService.fetchFeed(feedUrl);
             feedBuilder
                     .setTitle(syndFeed.getTitle())
                     .setDescription(syndFeed.getDescription())
                     .setLink(syndFeed.getLink())
                     .setAuthor(syndFeed.getAuthor())
                     .setPubDate(syndFeed.getPublishedDate());
-        } catch (FeedException | MalformedURLException e) {
-            throw new MalformedFeedException(feedUrl);
+        } catch (Exception e) {
+            e.printStackTrace();
+//            throw new MalformedFeedException(feedUrl);
         }
         feedBuilder.setFeedUrl(feedUrl);
         Feed feed = feedBuilder.createFeed();
         feed = feedRepository.save(feed);
         user.getFeeds().add(feed);
         userService.saveUser(user);
+        feedFetchService.fetchFeed(feed);
         return feed;
     }
 

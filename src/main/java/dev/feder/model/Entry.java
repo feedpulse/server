@@ -45,6 +45,7 @@ public class Entry implements Serializable {
     private String author;
 
     @Nullable
+    @Column(columnDefinition = "VARCHAR(500)")
     private String imageUrl;
 
     @Nullable
@@ -53,7 +54,7 @@ public class Entry implements Serializable {
     @Nullable
     private Date pubDate;
 
-    @OneToMany(fetch = FetchType.LAZY)
+    @OneToMany(fetch = FetchType.EAGER)
     @JoinColumn(name = "entry_uuid")
     private Set<UserEntryInteraction> userEntryInteractions;
 
@@ -202,7 +203,6 @@ public class Entry implements Serializable {
                 ", language='" + language + '\'' +
                 ", pubDate=" + pubDate +
                 ", keywords=" + keywords +
-                ", userEntryInteractions=" + userEntryInteractions +
                 '}';
     }
 

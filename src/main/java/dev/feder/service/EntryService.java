@@ -2,8 +2,7 @@ package dev.feder.service;
 
 import com.rometools.rome.feed.synd.SyndCategory;
 import com.rometools.rome.feed.synd.SyndEntry;
-import dev.feder.dto.EntryDTO;
-import dev.feder.dto.request.EntryInteractionUpdateDTO;
+import dev.feder.dto.response.EntryDTO;
 import dev.feder.exceptions.InvalidUuidException;
 import dev.feder.exceptions.NoSuchEntryException;
 import dev.feder.model.*;
@@ -36,26 +35,29 @@ public class EntryService {
         this.userEntryInteractionRepository = userEntryInteractionRepository;
     }
 
-    public void addEntry(SyndEntry entry, Feed feed, EssenceResult data) {
-        Set<String> keywordss = entry.getCategories().stream().map(SyndCategory::getName).collect(Collectors.toSet());
-        Set<Keyword> keywords = keywordService.addMissingKeywords(keywordss);
-        System.out.println("\nkeywords: ");
-        keywords.forEach(keyword -> System.out.println(keyword.getKeyword()));
+    public void addIfNotExists(Feed feed, SyndEntry syndEntry, Set<Keyword> keywords, EssenceResult data) {
+        Optional<Entry> existingEntry = getEntryByLink(syndEntry.getLink());
+        if (existingEntry.isPresent()) return; // TODO: maybe update entry
 
         Entry.EntryBuilder entryBuilder = new Entry.EntryBuilder();
-        Entry newEntry = entryBuilder
-                .setTitle(entry.getTitle())
+        entryBuilder
+                .setTitle(syndEntry.getTitle())
                 .setDescription(data.getDescription())
                 .setText(data.getText())
-                .setLink(entry.getLink())
-                .setAuthor(entry.getAuthor())
+                .setLink(syndEntry.getLink())
+                .setAuthor(syndEntry.getAuthor())
                 .setImageUrl(data.getImage())
                 .setLanguage(data.getLanguage())
-                .setPubDate(entry.getPublishedDate())
                 .setKeywords(keywords)
-                .setFeed(feed)
-                .createEntry();
-        newEntry = entryRepository.save(newEntry);
+                .setFeed(feed);
+        if (syndEntry.getPublishedDate() == null) {
+            entryBuilder.setPubDate(new Date());
+        } else {
+            entryBuilder.setPubDate(syndEntry.getPublishedDate());
+        }
+
+        Entry newEntry = entryRepository.save(entryBuilder.createEntry());
+
     }
 
     public void deleteEntry(Entry entry) {
@@ -69,11 +71,12 @@ public class EntryService {
         return entryRepository.findEntriesByFeedUuidAndUsersId(feedUuid, userService.getCurrentUser().getId(), pageable).toList();
     }
 
-    public List<Entry> getEntries(Integer limit, Integer offset, Boolean sortOrder) {
+    public List<EntryDTO> getEntries(Integer limit, Integer offset, Boolean sortOrder) {
         User user = userService.getCurrentUser();
-        var sort = sortOrder ? Sort.Direction.DESC : Sort.Direction.ASC;
-        Pageable pageable = PageRequest.of(offset, limit, sort, "pubDate");
-        return entryRepository.findEntriesByUsersId(user.getId(), pageable).toList();
+        var by = Sort.by("pubDate");
+        var sort = sortOrder ? by.ascending() : by.descending();
+        Pageable pageable = PageRequest.of(offset, limit, sort);
+        return entryRepository.findEntriesByUsersId(user.getId(), pageable).map(entry -> toEntryDTO(entry, user)).toList();
     }
 
     public @NonNull Entry getEntry(@Nullable String uuidString) throws InvalidUuidException, NoSuchEntryException {
@@ -151,4 +154,10 @@ public class EntryService {
         return entryDtoBuilder.createEntryDTO();
 
     }
+
+    public void saveEntry(Entry entry) {
+        entryRepository.save(entry);
+    }
+
+
 }

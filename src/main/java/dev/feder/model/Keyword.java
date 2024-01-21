@@ -52,7 +52,6 @@ public class Keyword implements Serializable {
     public String toString() {
         return "Keyword{" +
                 "keyword='" + keyword + '\'' +
-                ", entry=" + entry +
                 '}';
     }
 

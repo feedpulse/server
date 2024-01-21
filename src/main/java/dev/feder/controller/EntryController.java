@@ -1,5 +1,6 @@
 package dev.feder.controller;
 
+import dev.feder.dto.response.EntryDTO;
 import dev.feder.dto.request.EntryInteractionUpdateDTO;
 import dev.feder.exceptions.InvalidUuidException;
 import dev.feder.exceptions.NoSuchEntryException;
@@ -22,7 +23,7 @@ public class EntryController {
     }
     @ResponseStatus(HttpStatus.OK)
     @GetMapping
-    public List<Entry> getEntries(
+    public List<EntryDTO> getEntries(
             @RequestParam(defaultValue = "20") Integer limit,
             @RequestParam(defaultValue = "0") Integer offset,
             @RequestParam(required = false, defaultValue = "true") Boolean sortOrder

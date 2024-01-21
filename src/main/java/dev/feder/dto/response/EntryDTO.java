@@ -1,4 +1,4 @@
-package dev.feder.dto;
+package dev.feder.dto.response;
 
 import java.io.Serializable;
 import java.util.UUID;
@@ -35,6 +35,110 @@ public class EntryDTO implements Serializable {
         this.keywords = keywords;
         this.read = read;
         this.favorite = favorite;
+        this.bookmark = bookmark;
+    }
+
+    public UUID getUuid() {
+        return uuid;
+    }
+
+    public void setUuid(UUID uuid) {
+        this.uuid = uuid;
+    }
+
+    public UUID getFeedUuid() {
+        return feedUuid;
+    }
+
+    public void setFeedUuid(UUID feedUuid) {
+        this.feedUuid = feedUuid;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    public String getUrl() {
+        return url;
+    }
+
+    public void setUrl(String url) {
+        this.url = url;
+    }
+
+    public String getImageUrl() {
+        return imageUrl;
+    }
+
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public String getText() {
+        return text;
+    }
+
+    public void setText(String text) {
+        this.text = text;
+    }
+
+    public String getAuthor() {
+        return author;
+    }
+
+    public void setAuthor(String author) {
+        this.author = author;
+    }
+
+    public String getPublishedDate() {
+        return publishedDate;
+    }
+
+    public void setPublishedDate(String publishedDate) {
+        this.publishedDate = publishedDate;
+    }
+
+    public String[] getKeywords() {
+        return keywords;
+    }
+
+    public void setKeywords(String[] keywords) {
+        this.keywords = keywords;
+    }
+
+    public boolean isRead() {
+        return read;
+    }
+
+    public void setRead(boolean read) {
+        this.read = read;
+    }
+
+    public boolean isFavorite() {
+        return favorite;
+    }
+
+    public void setFavorite(boolean favorite) {
+        this.favorite = favorite;
+    }
+
+    public boolean isBookmark() {
+        return bookmark;
+    }
+
+    public void setBookmark(boolean bookmark) {
         this.bookmark = bookmark;
     }
 

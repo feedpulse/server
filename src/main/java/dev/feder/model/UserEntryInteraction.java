@@ -1,5 +1,7 @@
 package dev.feder.model;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 
 import java.io.Serializable;
@@ -7,26 +9,30 @@ import java.io.Serializable;
 @Entity
 public class UserEntryInteraction implements Serializable {
 
+    @JsonIgnore
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
+    @JsonBackReference
+    @JsonIgnore
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User user;
 
-    @ManyToOne
+    @JsonIgnore
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "entry_uuid")
     private Entry entry;
 
     @Column(name = "is_bookmark")
-    private Boolean bookmark;
+    private Boolean bookmark = false;
 
     @Column(name = "is_favorite")
-    private Boolean favorite;
+    private Boolean favorite = false;
 
     @Column(name = "is_read") // Renamed from `read` to `is_read`
-    private Boolean read;
+    private Boolean read = false;
 
     public UserEntryInteraction() {
     }

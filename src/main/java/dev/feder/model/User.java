@@ -1,6 +1,7 @@
 package dev.feder.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import org.springframework.lang.NonNull;
 
@@ -42,7 +43,8 @@ public class User implements Serializable {
             inverseJoinColumns = @JoinColumn(name = "feed_id"))
     private List<Feed> feeds = new ArrayList<>();
 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    @JsonManagedReference
+    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
     private List<UserEntryInteraction> userEntryInteractions = new ArrayList<>();
 
     public User(@NonNull String username, @NonNull String password, @NonNull String email, Set<Role> roles, List<Feed> feeds, List<UserEntryInteraction> userEntryInteractions) {
@@ -122,7 +124,6 @@ public class User implements Serializable {
                 ", email='" + email + '\'' +
                 ", roles='" + roles + '\'' +
                 ", feeds='" + feeds + '\'' +
-                ", userEntryInteractions='" + userEntryInteractions + '\'' +
                 '}';
     }
 
