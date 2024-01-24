@@ -43,4 +43,24 @@ public class EntryController {
         entryService.updateEntry(uuid, entry.isRead(), entry.isFavorite(), entry.isBookmark());
     }
 
+    @ResponseStatus(HttpStatus.OK)
+    @GetMapping("/favorites")
+    public List<EntryDTO> getFavoriteEntries(
+            @RequestParam(defaultValue = "20") Integer limit,
+            @RequestParam(defaultValue = "0") Integer offset,
+            @RequestParam(required = false, defaultValue = "true") Boolean sortOrder
+    ) {
+        return entryService.getFavoriteEntries(limit, offset, sortOrder);
+    }
+
+    @ResponseStatus(HttpStatus.OK)
+    @GetMapping("/bookmarks")
+    public List<EntryDTO> getBookmarkedEntries(
+            @RequestParam(defaultValue = "20") Integer limit,
+            @RequestParam(defaultValue = "0") Integer offset,
+            @RequestParam(required = false, defaultValue = "true") Boolean sortOrder
+    ) {
+        return entryService.getBookmarkedEntries(limit, offset, sortOrder);
+    }
+
 }

@@ -98,7 +98,6 @@ public final class FetchUtil {
             checkStatus(response, uri);
             return response;
         } catch (Exception e) {
-            e.printStackTrace();
             throw new FetchException(uri.toString());
         }
     }

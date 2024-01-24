@@ -1,6 +1,7 @@
 package dev.feder.repository;
 
 import dev.feder.model.Entry;
+import io.micrometer.observation.ObservationFilter;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -26,4 +27,9 @@ public interface EntryRepository extends JpaRepository<Entry, UUID> {
     @Query("SELECT e FROM Entry e JOIN e.feed f JOIN f.users u WHERE u.id = :userId AND e.link = :link")
     Optional<Entry> findEntryByLinkAndUsersId(String link, Long userId);
 
+    @Query("SELECT e FROM Entry e JOIN e.userEntryInteractions uei JOIN uei.user u WHERE u.id = :id AND uei.favorite = true")
+    Page<Entry> findFavoriteEntriesByUsersId(Long id, Pageable pageable);
+
+    @Query("SELECT e FROM Entry e JOIN e.userEntryInteractions uei JOIN uei.user u WHERE u.id = :id AND uei.bookmark = true")
+    Page<Entry> findBookmarkedEntriesByUsersId(Long id, Pageable pageable);
 }

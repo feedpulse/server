@@ -56,4 +56,10 @@ public class FeedController {
         Feed feed = feedService.addFeed(feedUrl);
         return feed;
     }
+
+    @DeleteMapping("/{uuid}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteFeed(@PathVariable String uuid) {
+        feedService.deleteFeedForUser(uuid);
+    }
 }

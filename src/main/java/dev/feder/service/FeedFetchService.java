@@ -95,7 +95,7 @@ public class FeedFetchService {
 
         } catch (FetchException | FeedException | HtmlNotParsableException | IOException e) {
             // TODO: handle exception
-            e.printStackTrace();
+            log.error("Error while fetching feed: {}", feed.getFeedUrl());
         }
     }
 

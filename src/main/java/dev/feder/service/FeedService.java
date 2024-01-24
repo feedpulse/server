@@ -2,21 +2,18 @@ package dev.feder.service;
 
 
 import com.rometools.rome.feed.synd.SyndFeed;
-import com.rometools.rome.io.FeedException;
 import dev.feder.exceptions.InvalidUuidException;
 import dev.feder.exceptions.MalformedFeedException;
 import dev.feder.exceptions.NoSuchFeedException;
 import dev.feder.model.Feed;
 import dev.feder.model.User;
 import dev.feder.repository.FeedRepository;
-import dev.feder.util.FetchUtil;
 import dev.feder.util.UuidUtil;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
-import java.net.MalformedURLException;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -93,9 +90,21 @@ public class FeedService {
         return feed;
     }
 
-    public void deleteFeed(Feed feed) {
-        feedRepository.delete(feed);
+    public void deleteFeedForUser(String uuid) {
+        User user = userService.getCurrentUser();
+        Optional<Feed> feed = feedRepository.findFeedByUuidAndUsersId(UuidUtil.fromString(uuid), user.getId());
+        if (feed.isEmpty()) {
+            throw new NoSuchFeedException(uuid);
+        }
+        user.getFeeds().remove(feed.get());
+        userService.saveUser(user);
+        /**
+         * Should we delete the feed from the database if no users have it?
+         */
     }
 
+    public void deleteFeedForUser(Feed feed) {
+        feedRepository.delete(feed);
+    }
 
 }

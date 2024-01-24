@@ -160,4 +160,19 @@ public class EntryService {
     }
 
 
+    public List<EntryDTO> getFavoriteEntries(Integer limit, Integer offset, Boolean sortOrder) {
+        User user = userService.getCurrentUser();
+        var by = Sort.by("pubDate");
+        var sort = sortOrder ? by.ascending() : by.descending();
+        Pageable pageable = PageRequest.of(offset, limit, sort);
+        return entryRepository.findFavoriteEntriesByUsersId(user.getId(), pageable).map(entry -> toEntryDTO(entry, user)).toList();
+    }
+
+    public List<EntryDTO> getBookmarkedEntries(Integer limit, Integer offset, Boolean sortOrder) {
+        User user = userService.getCurrentUser();
+        var by = Sort.by("pubDate");
+        var sort = sortOrder ? by.ascending() : by.descending();
+        Pageable pageable = PageRequest.of(offset, limit, sort);
+        return entryRepository.findBookmarkedEntriesByUsersId(user.getId(), pageable).map(entry -> toEntryDTO(entry, user)).toList();
+    }
 }
