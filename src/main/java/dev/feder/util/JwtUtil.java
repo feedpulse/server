@@ -19,10 +19,10 @@ import java.util.function.Function;
 @Component
 public class JwtUtil {
 
-    @Value("${feder.server.jwtSecret}")
+    @Value("${feedpulse.server.jwtSecret}")
     private String jwtSecret;
 
-    @Value("${feder.server.jwtExpirationMs}")
+    @Value("${feedpulse.server.jwtExpirationMs}")
     private int jwtExpirationMs;
 
     private static final String SECRET = "your-secret-key"; // Replace with a secure secret key
