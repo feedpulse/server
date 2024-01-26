@@ -1,18 +1,24 @@
 package io.feedpulse.repository;
 
 import io.feedpulse.model.Entry;
+import io.feedpulse.model.Feed;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 public interface EntryRepository extends JpaRepository<Entry, UUID> {
 
     Optional<Entry> findByLink(String link);
     Page<Entry> findAllByFeedUuid(UUID feedUuid, Pageable pageable);
+
+    @Query("SELECT e.uuid FROM Entry e WHERE e.feed = :feed")
+    List<UUID> findUuidsByFeedId(Feed feed);
 
     @Query("SELECT e FROM Entry e JOIN e.feed f JOIN f.users u WHERE u.id = :userId AND f.uuid = :feedUuid")
     Page<Entry> findEntriesByFeedUuidAndUsersId(UUID feedUuid, Long userId, Pageable pageable);

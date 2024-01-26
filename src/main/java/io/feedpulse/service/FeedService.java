@@ -9,6 +9,7 @@ import io.feedpulse.model.Feed;
 import io.feedpulse.model.User;
 import io.feedpulse.repository.FeedRepository;
 import io.feedpulse.util.UuidUtil;
+import jakarta.transaction.Transactional;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -25,12 +26,14 @@ public class FeedService {
     private final UserService userService;
     private final EntryService entryService;
     private final FeedFetchService feedFetchService;
+    private final UserEntryInteractionService userEntryInteractionService;
 
-    public FeedService(FeedRepository feedRepository, EntryService entryService, UserService userService , FeedFetchService feedFetchService) {
+    public FeedService(FeedRepository feedRepository, EntryService entryService, UserService userService , FeedFetchService feedFetchService, UserEntryInteractionService userEntryInteractionService) {
         this.feedRepository = feedRepository;
         this.entryService = entryService;
         this.userService = userService;
         this.feedFetchService = feedFetchService;
+        this.userEntryInteractionService = userEntryInteractionService;
     }
 
     // WARNING: this method is only for internal use and should not be exposed to the frontend
@@ -90,14 +93,19 @@ public class FeedService {
         return feed;
     }
 
+    @Transactional
     public void deleteFeedForUser(String uuid) {
         User user = userService.getCurrentUser();
         Optional<Feed> feed = feedRepository.findFeedByUuidAndUsersId(UuidUtil.fromString(uuid), user.getId());
         if (feed.isEmpty()) {
             throw new NoSuchFeedException(uuid);
         }
+        // delete all user entry interactions for the feed
+        userEntryInteractionService.deleteAllUserEntryInteractionsForFeed(user, feed.get());
+        // remove the feed from the user's feeds
         user.getFeeds().remove(feed.get());
         userService.saveUser(user);
+
         /**
          * Should we delete the feed from the database if no users have it?
          */
