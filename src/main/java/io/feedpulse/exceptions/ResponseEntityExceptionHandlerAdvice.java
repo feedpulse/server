@@ -6,7 +6,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 @RestControllerAdvice
-public class ResponseEntityExceptionHandlerAdvice extends ResponseEntityExceptionHandler {
+public class ResponseEntityExceptionHandlerAdvice {
 
     /**
      * This is an exception handler for all subclasses of 'BaseException' (which is a subclass of 'RuntimeException').
