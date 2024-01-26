@@ -7,9 +7,14 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/")
 public class HomeController {
 
-    @RequestMapping
+    @RequestMapping(produces = "application/json")
     public String home() {
         return "Hello World!";
+    }
+
+    @RequestMapping(produces = "text/html")
+    public String homeHtml() {
+        return "<h1>Hello World!</h1>";
     }
 
 }
