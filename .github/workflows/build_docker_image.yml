@@ -1,0 +1,78 @@
+name: Build New Release
+
+on: [push, release]
+
+env:
+  # Use docker.io for Docker Hub if empty
+  REGISTRY: ghcr.io
+  # github.repository as <account>/<repo>
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+
+  build-docker-release:
+
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: 'Checkout GitHub Action'
+        uses: actions/checkout@v4
+
+      - name: 'Setup Java Environment'
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: 'Build Image'
+        env:
+          DB_USERNAME: ${{secrets.DB_USERNAME}}
+          DB_PASSWORD: ${{secrets.DB_PASSWORD}}
+          DB_URL: ${{secrets.DB_URL}}
+          JWT_SECRET: ${{secrets.JWT_SECRET}}
+        run: |
+          java --version
+          javac --version
+          chmod +x mvnw 
+          ./mvnw spring-boot:build-image -Dspring-boot.build-image.imageName=${REGISTRY}/${IMAGE_NAME}:latest
+
+      - name: 'Login to GitHub Container Registry'
+        uses: docker/login-action@v1
+        with:
+          registry: ghcr.io
+          username: ${{github.actor}}
+          password: ${{secrets.GITHUB_TOKEN}}
+
+      - name: 'Tag Image and Pus as Main'
+        # check if branch name contains 'main' or 'master'
+        if: ${{ startsWith(github.ref, 'refs/heads/main') || startsWith(github.ref, 'refs/heads/master') }}
+        run: |
+          docker tag ${REGISTRY}/${IMAGE_NAME}:latest ${REGISTRY}/${IMAGE_NAME}:main 
+          docker tag ${REGISTRY}/${IMAGE_NAME}:latest ${REGISTRY}/${IMAGE_NAME}:main-${{ github.sha }}
+          docker push ${REGISTRY}/${IMAGE_NAME}:main
+          docker push ${REGISTRY}/${IMAGE_NAME}:main-${{ github.sha }}
+          docker push ${REGISTRY}/${IMAGE_NAME}:latest
+
+      - name: 'Tag Image and Push as Dev'
+        # check if branch name does not contain 'main' or 'master'
+        if: ${{ !startsWith(github.ref, 'refs/heads/main') && !startsWith(github.ref, 'refs/heads/master') }}
+        run: |
+          docker tag ${REGISTRY}/${IMAGE_NAME}:latest ${REGISTRY}/${IMAGE_NAME}:dev 
+          docker tag ${REGISTRY}/${IMAGE_NAME}:latest ${REGISTRY}/${IMAGE_NAME}:dev-${{ github.sha }}
+          docker push ${REGISTRY}/${IMAGE_NAME}:dev
+          docker push ${REGISTRY}/${IMAGE_NAME}:dev-${{ github.sha }}
+          docker push ${REGISTRY}/${IMAGE_NAME}:latest
+
+#      - name: 'Tag Image and Push as Branch'
+#        # get branch name, strip it  and add it as tag
+#        if: startsWith(github.ref, 'refs/heads/') && !startsWith(github.ref, 'refs/heads/main') && !startsWith(github.ref, 'refs/heads/master')
+#        run: |
+#          BRANCH_NAME=${{ github.ref }}
+#          BRANCH_NAME=${BRANCH_NAME#refs/heads/}
+#          docker tag ${REGISTRY}/${IMAGE_NAME}:latest ${REGISTRY}/${IMAGE_NAME}:${BRANCH_NAME}
+#          docker push ${REGISTRY}/${IMAGE_NAME}:${BRANCH_NAME}
+#          docker push ${REGISTRY}/${IMAGE_NAME}:latest
+
