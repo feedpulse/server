@@ -7,7 +7,12 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 public class WrongPasswordException extends BaseException {
 
     public WrongPasswordException() {
-        super("the entered password is wrong");
+        super(
+                HttpStatus.BAD_REQUEST.value(),
+                "Wrong password",
+                "Check if the password is correct and try again.",
+                "Check if the password is correct and try again."
+        );
     }
 
 

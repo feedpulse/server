@@ -7,7 +7,12 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 public class FetchException extends BaseException {
 
     public FetchException(String feedUrl) {
-        super("Could not fetch content with url: " + feedUrl);
+        super(
+                HttpStatus.BAD_REQUEST.value(),
+                "Could not fetch feed from url: " + feedUrl,
+                "Check if the url is correct and try again.",
+                "Check if the url is correct and try again."
+        );
     }
 
 

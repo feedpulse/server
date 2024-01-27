@@ -7,7 +7,12 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 public class InvalidUuidException extends BaseException {
 
     public InvalidUuidException(String url) {
-        super("The uuid [" + url + "] is not valid.");
+        super(
+                HttpStatus.BAD_REQUEST.value(),
+                "Invalid uuid: " + url,
+                "Check if the uuid is correct and try again.",
+                "Check if the uuid is correct and try again."
+        );
     }
 
 

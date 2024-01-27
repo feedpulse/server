@@ -7,7 +7,12 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 public class NotAuthenticatedException extends BaseException {
 
     public NotAuthenticatedException() {
-        super("You are not authenticated. Please login or register.");
+        super(
+                HttpStatus.UNAUTHORIZED.value(),
+                "Not authenticated",
+                "Please authenticate and try again.",
+                "Please authenticate and try again."
+        );
     }
 
 }

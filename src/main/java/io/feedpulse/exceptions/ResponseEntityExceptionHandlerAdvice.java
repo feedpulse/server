@@ -1,7 +1,11 @@
 package io.feedpulse.exceptions;
 
+import io.feedpulse.dto.response.ExceptionResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
+import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -10,32 +14,48 @@ public class ResponseEntityExceptionHandlerAdvice {
 
     /**
      * This is an exception handler for all subclasses of 'BaseException' (which is a subclass of 'RuntimeException').
-     * If any of these exceptions are thrown within the application, this handler catches them and immediately re-throws them.
-     * The purpose of re-throwing the exception here is to exclude these custom exceptions from being handled
-     * by the global exception handler {@see ExceptionHandlerAdvice#handleException(Exception)}.
-     * This allows the Spring framework to use the '@ResponseStatus' annotation present on these exception classes
-     * to set the appropriate HTTP status code in the reply.
+     * If any of these exceptions are thrown within the application, this handler catches them and returns a {@link ExceptionResponse} object.
      *
-     * @param ex      the exception that got thrown in the application.
-     * @throws RuntimeException re-throws the input exception so the '@ResponseStatus' annotation on it can be used.
+     * @param ex the exception that got thrown in the application.
      */
     @ExceptionHandler({BaseException.class})
-    protected void handleCustomExceptions(RuntimeException ex) {
-        throw ex; //
+    protected ResponseEntity<ExceptionResponse> handleCustomExceptions(BaseException ex) {
+        return new ResponseEntity<>(ExceptionResponse.fromException(ex), HttpStatus.valueOf(ex.getStatus()));
     }
+
+    /**
+     * Handles AccessDeniedException which is thrown when a user tries to access a resource that they are not authorized to access.
+     * This exception is thrown by the Spring Security framework, because of the '@PreAuthorize' annotation on the controller methods.
+     */
+    @ExceptionHandler({AccessDeniedException.class})
+    protected ResponseEntity<ExceptionResponse> handleAccessDeniedException(AccessDeniedException ex) {
+        BaseException e = new NotAuthenticatedException();
+        return new ResponseEntity<>(ExceptionResponse.fromException(e), HttpStatus.valueOf(e.getStatus()));
+    }
+
+    /**
+     * Handles the HttpMessageNotReadableException which is thrown when the request body is not in the expected format or is missing.
+     * This exception is thrown by the Spring framework, because of the '@RequestBody' annotation on the controller methods.
+     */
+    @ExceptionHandler({HttpMessageNotReadableException.class})
+    public ResponseEntity<ExceptionResponse> handleHttpMessageNotReadableException(HttpMessageNotReadableException ex) {
+        BaseException e =  new InvalidRequestBodyException();
+        return new ResponseEntity<>(ExceptionResponse.fromException(e), HttpStatus.valueOf(e.getStatus()));
+    }
+
 
     /**
      * This is the global exception handler for all exceptions that are not subclasses of 'BaseException'.
      * It catches all exceptions that are not caught by any other exception handler in the application.
-     * It returns a 'ProblemDetail' object with the appropriate HTTP status code and a message.
+     * It returns a generic 'ExceptionResponse' object with a generic message and the HTTP status code 500.
      *
-     * @param e the exception that got thrown in the application.
-     * @return a 'ProblemDetail' object with the appropriate HTTP status code and a message.
+     * @param ex the exception that got thrown in the application.
+     * @return a 'ExceptionResponse' object with the appropriate HTTP status code and a message.
      */
     @ExceptionHandler(Exception.class)
-    public ProblemDetail handleException(Exception e) {
-        e.printStackTrace();
-        return ProblemDetail.forStatusAndDetail(HttpStatus.INTERNAL_SERVER_ERROR, "Internal Server Error");
+    public ResponseEntity<ExceptionResponse> handleException(Exception ex) {
+        BaseException e = new BaseException(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Internal Server Error", "Internal Server Error", "Internal Server Error");
+        return new ResponseEntity<>(ExceptionResponse.fromException(e), HttpStatus.valueOf(e.getStatus()));
     }
 
 }
