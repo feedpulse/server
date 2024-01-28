@@ -27,6 +27,7 @@ public class Entry implements Serializable {
     private Feed feed;
 
     @NonNull
+    @Column(nullable = false, length = 500)
     private String title;
 
     @Column(columnDefinition = "LONGTEXT")
