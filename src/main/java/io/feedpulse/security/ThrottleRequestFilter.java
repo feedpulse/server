@@ -2,6 +2,8 @@ package io.feedpulse.security;
 
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
+import io.feedpulse.exceptions.BaseException;
+import io.feedpulse.exceptions.TooManyRequestsException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -28,9 +30,7 @@ public class ThrottleRequestFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         String clientIpAddress = getClientIP(request);
         if(isMaximumRequestsPerSecondExceeded(clientIpAddress)){
-            response.setStatus(HttpStatus.TOO_MANY_REQUESTS.value());
-            response.getWriter().write("Too many requests");
-            return;
+            throw new TooManyRequestsException();
         }
         filterChain.doFilter(request, response);
     }
