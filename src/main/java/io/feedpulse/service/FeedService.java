@@ -2,20 +2,28 @@ package io.feedpulse.service;
 
 
 import com.rometools.rome.feed.synd.SyndFeed;
+import io.feedpulse.dto.response.FeedDTO;
+import io.feedpulse.dto.response.PageableDTO;
 import io.feedpulse.exceptions.InvalidUuidException;
 import io.feedpulse.exceptions.MalformedFeedException;
 import io.feedpulse.exceptions.NoSuchFeedException;
+import io.feedpulse.model.Entry;
 import io.feedpulse.model.Feed;
 import io.feedpulse.model.User;
 import io.feedpulse.repository.FeedRepository;
 import io.feedpulse.util.UuidUtil;
 import jakarta.transaction.Transactional;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PagedResourcesAssembler;
+import org.springframework.hateoas.EntityModel;
+import org.springframework.hateoas.PagedModel;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -28,12 +36,16 @@ public class FeedService {
     private final FeedFetchService feedFetchService;
     private final UserEntryInteractionService userEntryInteractionService;
 
-    public FeedService(FeedRepository feedRepository, EntryService entryService, UserService userService , FeedFetchService feedFetchService, UserEntryInteractionService userEntryInteractionService) {
+    private final PagedResourcesAssembler<Feed> pagedResourcesAssembler;
+
+
+    public FeedService(FeedRepository feedRepository, EntryService entryService, UserService userService , FeedFetchService feedFetchService, UserEntryInteractionService userEntryInteractionService, PagedResourcesAssembler<Feed> pagedResourcesAssembler) {
         this.feedRepository = feedRepository;
         this.entryService = entryService;
         this.userService = userService;
         this.feedFetchService = feedFetchService;
         this.userEntryInteractionService = userEntryInteractionService;
+        this.pagedResourcesAssembler = pagedResourcesAssembler;
     }
 
     // WARNING: this method is only for internal use and should not be exposed to the frontend
@@ -41,11 +53,29 @@ public class FeedService {
         return feedRepository.findAll();
     }
 
-    public List<Feed> getFeeds(Integer limit, Integer offset, Boolean sortOrder) {
+    private Page<Feed> getFeedsAsPage(Integer size, Integer page, Boolean sortOrder) {
         User user = userService.getCurrentUser();
-        var sort = sortOrder ? Sort.Direction.DESC : Sort.Direction.ASC;
-        Pageable pageable = PageRequest.of(offset, limit, sort, "pubDate");
-        return feedRepository.findFeedsByUsersId(user.getId(), pageable).toList();
+        var by = Sort.by("pubDate");
+        var sort = sortOrder ? by.ascending() : by.descending();
+        Pageable pageable = PageRequest.of(page, size, sort);
+        return feedRepository.findFeedsByUsersId(user.getId(), pageable);
+    }
+
+    private PagedModel<EntityModel<Feed>> getFeedsAsPagedModel(Integer size, Integer page, Boolean sortOrder) {
+        Page<Feed> feeds = getFeedsAsPage(size, page, sortOrder);
+        feeds.stream().toList().forEach(feed -> System.out.println(feed.getTitle()));
+        PagedModel<EntityModel<Feed>> pagedModel = pagedResourcesAssembler.toModel(feeds);
+        return pagedModel;
+    }
+
+    public PageableDTO<FeedDTO> getFeeds(Integer size, Integer page, Boolean sortOrder) {
+        PagedModel<EntityModel<Feed>> pagedModel = getFeedsAsPagedModel(size, page, sortOrder);
+        List<FeedDTO> feedDTOs = pagedModel.getContent().stream()
+                .map(EntityModel::getContent)
+                .filter(Objects::nonNull)
+                .map(FeedDTO::of)
+                .toList();
+        return PageableDTO.of(pagedModel, feedDTOs);
     }
 
     public Feed getFeed(String uuidString) throws InvalidUuidException, NoSuchFeedException{

@@ -45,6 +45,7 @@ public class Feed implements Serializable {
     @Nullable
     private Date pubDate;
 
+    @JsonIgnore
     @ManyToMany(mappedBy = "feeds") // it tells Hibernate that User is the owner of the relationship
     private List<User> users;
 

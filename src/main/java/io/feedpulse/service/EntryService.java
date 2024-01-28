@@ -2,6 +2,7 @@ package io.feedpulse.service;
 
 import com.rometools.rome.feed.synd.SyndEntry;
 import io.feedpulse.dto.response.EntryDTO;
+import io.feedpulse.dto.response.PageableDTO;
 import io.feedpulse.exceptions.InvalidUuidException;
 import io.feedpulse.exceptions.NoSuchEntryException;
 import io.feedpulse.model.*;
@@ -9,9 +10,15 @@ import io.feedpulse.repository.EntryRepository;
 import io.feedpulse.repository.UserEntryInteractionRepository;
 import io.feedpulse.util.UuidUtil;
 import io.github.cdimascio.essence.EssenceResult;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PagedResourcesAssembler;
+import org.springframework.hateoas.EntityModel;
+import org.springframework.hateoas.PagedModel;
 import org.springframework.lang.NonNull;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
@@ -21,16 +28,20 @@ import java.util.*;
 @Service
 public class EntryService {
 
+    private static final Logger log = LoggerFactory.getLogger(EntryService.class);
+
     private final EntryRepository entryRepository;
     private final UserService userService;
     private final KeywordService keywordService;
     private final UserEntryInteractionRepository userEntryInteractionRepository;
+    private final PagedResourcesAssembler<Entry> pagedResourcesAssembler;
 
-    public EntryService(@NonNull EntryRepository entryRepository, @NonNull UserService userService, KeywordService keywordService, UserEntryInteractionRepository userEntryInteractionRepository) {
+    public EntryService(@NonNull EntryRepository entryRepository, @NonNull UserService userService, KeywordService keywordService, UserEntryInteractionRepository userEntryInteractionRepository, PagedResourcesAssembler<Entry> pagedResourcesAssembler) {
         this.entryRepository = entryRepository;
         this.userService = userService;
         this.keywordService = keywordService;
         this.userEntryInteractionRepository = userEntryInteractionRepository;
+        this.pagedResourcesAssembler = pagedResourcesAssembler;
     }
 
     public void addIfNotExists(Feed feed, SyndEntry syndEntry, Set<Keyword> keywords, EssenceResult data) {
@@ -54,7 +65,12 @@ public class EntryService {
             entryBuilder.setPubDate(syndEntry.getPublishedDate());
         }
 
-        Entry newEntry = entryRepository.save(entryBuilder.createEntry());
+        try {
+            Entry newEntry = entryRepository.save(entryBuilder.createEntry());
+        } catch (Exception e) {
+            log.warn("Failed to save entry: {}", entryBuilder.createEntry());
+            e.printStackTrace();
+        }
 
     }
 
@@ -62,19 +78,52 @@ public class EntryService {
         entryRepository.delete(entry);
     }
 
-    public List<Entry> getEntries(String feedUuidString, Integer limit, Integer offset, Boolean sortOrder) throws InvalidUuidException {
+    private Page<Entry> getEntriesAsPage(String feedUuidString, Integer limit, Integer offset, Boolean sortOrder) throws InvalidUuidException {
         UUID feedUuid = UuidUtil.fromString(feedUuidString);
         var sort = sortOrder ? Sort.Direction.DESC : Sort.Direction.ASC;
         Pageable pageable = PageRequest.of(offset, limit, sort, "pubDate");
-        return entryRepository.findEntriesByFeedUuidAndUsersId(feedUuid, userService.getCurrentUser().getId(), pageable).toList();
+        return entryRepository.findEntriesByFeedUuidAndUsersId(feedUuid, userService.getCurrentUser().getId(), pageable);
     }
 
-    public List<EntryDTO> getEntries(Integer limit, Integer offset, Boolean sortOrder) {
+    private PagedModel<EntityModel<Entry>> getEntriesAsPagedModel(String feedUuidString, Integer limit, Integer offset, Boolean sortOrder) throws InvalidUuidException {
+        Page<Entry> entryList = getEntriesAsPage(feedUuidString, limit, offset, sortOrder);
+        PagedModel<EntityModel<Entry>> pagedModel = pagedResourcesAssembler.toModel(entryList);
+        return pagedModel;
+    }
+
+    public PageableDTO<EntryDTO> getEntries(String feedUuidString, Integer limit, Integer offset, Boolean sortOrder) throws InvalidUuidException {
+        PagedModel<EntityModel<Entry>> pagedModel = getEntriesAsPagedModel(feedUuidString, limit, offset, sortOrder);
+        List<EntryDTO> entryDTOs = pagedModel.getContent().stream()
+                .map(EntityModel::getContent)
+                .filter(Objects::nonNull)
+                .map(entry -> toEntryDTO(entry, userService.getCurrentUser()))
+                .toList();
+        return PageableDTO.of(pagedModel, entryDTOs);
+    }
+
+    private Page<Entry> getEntriesAsPage(Integer size, Integer page, Boolean sortOrder) {
         User user = userService.getCurrentUser();
         var by = Sort.by("pubDate");
         var sort = sortOrder ? by.ascending() : by.descending();
-        Pageable pageable = PageRequest.of(offset, limit, sort);
-        return entryRepository.findEntriesByUsersId(user.getId(), pageable).map(entry -> toEntryDTO(entry, user)).toList();
+        Pageable pageable = PageRequest.of(page, size, sort);
+        return entryRepository.findEntriesByUsersId(user.getId(), pageable);
+//        return entryRepository.findEntriesByUsersId(user.getId(), pageable).map(entry -> toEntryDTO(entry, user));
+    }
+
+    private PagedModel<EntityModel<Entry>> getEntriesAsPagedModel(Integer size, Integer page, Boolean sortOrder) {
+        Page<Entry> entryList = getEntriesAsPage(size, page, sortOrder);
+        PagedModel<EntityModel<Entry>> pagedModel = pagedResourcesAssembler.toModel(entryList);
+        return pagedModel;
+    }
+
+    public PageableDTO<EntryDTO> getEntries(Integer size, Integer page, Boolean sortOrder) {
+        PagedModel<EntityModel<Entry>> pagedModel = getEntriesAsPagedModel(size, page, sortOrder);
+        List<EntryDTO> entryList = pagedModel.getContent().stream()
+                .map(EntityModel::getContent)
+                .filter(Objects::nonNull)
+                .map(entry -> toEntryDTO(entry, userService.getCurrentUser()))
+                .toList();
+        return PageableDTO.of(pagedModel, entryList);
     }
 
     public @NonNull Entry getEntry(@Nullable String uuidString) throws InvalidUuidException, NoSuchEntryException {
@@ -122,7 +171,7 @@ public class EntryService {
         return toEntryDTO(entry, user, null);
     }
 
-    public EntryDTO toEntryDTO(Entry entry) {
+    public EntryDTO toEntryDTO(@Nullable Entry entry) {
         return toEntryDTO(entry, null, null);
     }
 
@@ -133,44 +182,58 @@ public class EntryService {
                     .findByUserIdAndEntryUuid(user.getId(), entry.getUuid())
                     .orElse(new UserEntryInteraction(user, entry));
         }
-        EntryDTO.EntryDtoBuilder entryDtoBuilder = new EntryDTO.EntryDtoBuilder();
-        entryDtoBuilder
-                .setUuid(entry.getUuid())
-                .setFeedUuid(entry.getFeed().getUuid())
-                .setTitle(entry.getTitle())
-                .setUrl(entry.getLink())
-                .setImageUrl(entry.getImageUrl())
-                .setDescription(entry.getDescription())
-                .setText(entry.getText())
-                .setAuthor(entry.getAuthor())
-                .setPublishedDate(entry.getPubDate().toString())
-                .setKeywords(entry.getKeywords().stream().map(Keyword::getKeyword).toArray(String[]::new))
-                .setRead(userEntryInteraction.isRead())
-                .setBookmark(userEntryInteraction.isBookmark())
-                .setFavorite(userEntryInteraction.isFavorite());
-
-        return entryDtoBuilder.createEntryDTO();
-
+        return EntryDTO.of(entry, userEntryInteraction);
     }
 
     public void saveEntry(Entry entry) {
         entryRepository.save(entry);
     }
 
-
-    public List<EntryDTO> getFavoriteEntries(Integer limit, Integer offset, Boolean sortOrder) {
+    private Page<Entry> getFavoriteEntriesAsPage(Integer size, Integer page, Boolean sortOrder) {
         User user = userService.getCurrentUser();
         var by = Sort.by("pubDate");
         var sort = sortOrder ? by.ascending() : by.descending();
-        Pageable pageable = PageRequest.of(offset, limit, sort);
-        return entryRepository.findFavoriteEntriesByUsersId(user.getId(), pageable).map(entry -> toEntryDTO(entry, user)).toList();
+        Pageable pageable = PageRequest.of(page, size, sort);
+        return entryRepository.findFavoriteEntriesByUsersId(user.getId(), pageable);
     }
 
-    public List<EntryDTO> getBookmarkedEntries(Integer limit, Integer offset, Boolean sortOrder) {
+    private PagedModel<EntityModel<Entry>> getFavoriteEntriesAsPagedModel(Integer size, Integer page, Boolean sortOrder) {
+        Page<Entry> entryList = getFavoriteEntriesAsPage(size, page, sortOrder);
+        PagedModel<EntityModel<Entry>> pagedModel = pagedResourcesAssembler.toModel(entryList);
+        return pagedModel;
+    }
+
+    public PageableDTO<EntryDTO> getFavoriteEntries(Integer size, Integer page, Boolean sortOrder) {
+        PagedModel<EntityModel<Entry>> pagedModel = getFavoriteEntriesAsPagedModel(size, page, sortOrder);
+        List<EntryDTO> entryList = pagedModel.getContent().stream()
+                .map(EntityModel::getContent)
+                .filter(Objects::nonNull)
+                .map(entry -> toEntryDTO(entry, userService.getCurrentUser()))
+                .toList();
+        return PageableDTO.of(pagedModel, entryList);
+    }
+
+    private Page<Entry> getBookmarkedEntriesAsPage(Integer size, Integer page, Boolean sortOrder) {
         User user = userService.getCurrentUser();
         var by = Sort.by("pubDate");
         var sort = sortOrder ? by.ascending() : by.descending();
-        Pageable pageable = PageRequest.of(offset, limit, sort);
-        return entryRepository.findBookmarkedEntriesByUsersId(user.getId(), pageable).map(entry -> toEntryDTO(entry, user)).toList();
+        Pageable pageable = PageRequest.of(page, size, sort);
+        return entryRepository.findBookmarkedEntriesByUsersId(user.getId(), pageable);
+    }
+
+    private PagedModel<EntityModel<Entry>> getBookmarkedEntriesAsPagedModel(Integer size, Integer page, Boolean sortOrder) {
+        Page<Entry> entryList = getBookmarkedEntriesAsPage(size, page, sortOrder);
+        PagedModel<EntityModel<Entry>> pagedModel = pagedResourcesAssembler.toModel(entryList);
+        return pagedModel;
+    }
+
+    public PageableDTO<EntryDTO> getBookmarkedEntries(Integer size, Integer page, Boolean sortOrder) {
+        PagedModel<EntityModel<Entry>> pagedModel = getBookmarkedEntriesAsPagedModel(size, page, sortOrder);
+        List<EntryDTO> entryList = pagedModel.getContent().stream()
+                .map(EntityModel::getContent)
+                .filter(Objects::nonNull)
+                .map(entry -> toEntryDTO(entry, userService.getCurrentUser()))
+                .toList();
+        return PageableDTO.of(pagedModel, entryList);
     }
 }

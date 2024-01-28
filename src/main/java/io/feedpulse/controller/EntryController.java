@@ -1,7 +1,8 @@
 package io.feedpulse.controller;
 
-import io.feedpulse.dto.response.EntryDTO;
 import io.feedpulse.dto.request.EntryInteractionUpdateDTO;
+import io.feedpulse.dto.response.EntryDTO;
+import io.feedpulse.dto.response.PageableDTO;
 import io.feedpulse.exceptions.InvalidUuidException;
 import io.feedpulse.exceptions.NoSuchEntryException;
 import io.feedpulse.model.Entry;
@@ -9,8 +10,6 @@ import io.feedpulse.service.EntryService;
 import org.springframework.http.HttpStatus;
 import org.springframework.lang.NonNull;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/entries")
@@ -21,14 +20,15 @@ public class EntryController {
     public EntryController(@NonNull EntryService entryService) {
         this.entryService = entryService;
     }
+
     @ResponseStatus(HttpStatus.OK)
     @GetMapping
-    public List<EntryDTO> getEntries(
-            @RequestParam(defaultValue = "20") Integer limit,
-            @RequestParam(defaultValue = "0") Integer offset,
+    public PageableDTO<EntryDTO> getEntries(
+            @RequestParam(defaultValue = "20") Integer size,
+            @RequestParam(defaultValue = "0") Integer page,
             @RequestParam(required = false, defaultValue = "true") Boolean sortOrder
     ) {
-        return entryService.getEntries(limit, offset, sortOrder);
+        return entryService.getEntries(size, page, sortOrder);
     }
 
     @ResponseStatus(HttpStatus.OK)
@@ -45,22 +45,22 @@ public class EntryController {
 
     @ResponseStatus(HttpStatus.OK)
     @GetMapping("/favorites")
-    public List<EntryDTO> getFavoriteEntries(
-            @RequestParam(defaultValue = "20") Integer limit,
-            @RequestParam(defaultValue = "0") Integer offset,
+    public PageableDTO<EntryDTO> getFavoriteEntries(
+            @RequestParam(defaultValue = "20") Integer size,
+            @RequestParam(defaultValue = "0") Integer page,
             @RequestParam(required = false, defaultValue = "true") Boolean sortOrder
     ) {
-        return entryService.getFavoriteEntries(limit, offset, sortOrder);
+        return entryService.getFavoriteEntries(size, page, sortOrder);
     }
 
     @ResponseStatus(HttpStatus.OK)
     @GetMapping("/bookmarks")
-    public List<EntryDTO> getBookmarkedEntries(
-            @RequestParam(defaultValue = "20") Integer limit,
-            @RequestParam(defaultValue = "0") Integer offset,
+    public PageableDTO<EntryDTO> getBookmarkedEntries(
+            @RequestParam(defaultValue = "20") Integer size,
+            @RequestParam(defaultValue = "0") Integer page,
             @RequestParam(required = false, defaultValue = "true") Boolean sortOrder
     ) {
-        return entryService.getBookmarkedEntries(limit, offset, sortOrder);
+        return entryService.getBookmarkedEntries(size, page, sortOrder);
     }
 
 }

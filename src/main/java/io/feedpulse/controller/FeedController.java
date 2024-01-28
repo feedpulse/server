@@ -1,6 +1,9 @@
 package io.feedpulse.controller;
 
 
+import io.feedpulse.dto.response.EntryDTO;
+import io.feedpulse.dto.response.FeedDTO;
+import io.feedpulse.dto.response.PageableDTO;
 import io.feedpulse.exceptions.MalformedFeedException;
 import io.feedpulse.model.Entry;
 import io.feedpulse.model.Feed;
@@ -27,12 +30,12 @@ public class FeedController {
 
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.OK)
-    public List<Feed> getFeed(
-            @RequestParam(defaultValue = "20") Integer limit,
-            @RequestParam(defaultValue = "0") Integer offset,
+    public PageableDTO<FeedDTO> getFeed(
+            @RequestParam(defaultValue = "20") Integer size,
+            @RequestParam(defaultValue = "0") Integer page,
             @RequestParam(required = false, defaultValue = "true") Boolean sortOrder
     ) {
-        return feedService.getFeeds(limit, offset, sortOrder);
+        return feedService.getFeeds(size, page, sortOrder);
     }
 
     @GetMapping(value = "/{uuid}", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -43,10 +46,10 @@ public class FeedController {
 
     @ResponseStatus(HttpStatus.OK)
     @GetMapping(value = "/{uuid}/entries", produces = MediaType.APPLICATION_JSON_VALUE)
-    public List<Entry> getFeedEntries(@PathVariable String uuid,
-                                      @RequestParam(defaultValue = "20") Integer limit,
-                                      @RequestParam(defaultValue = "0") Integer offset,
-                                      @RequestParam(required = false, defaultValue = "true") Boolean sortOrder) {
+    public PageableDTO<EntryDTO> getFeedEntries(@PathVariable String uuid,
+                                                @RequestParam(defaultValue = "20") Integer limit,
+                                                @RequestParam(defaultValue = "0") Integer offset,
+                                                @RequestParam(required = false, defaultValue = "true") Boolean sortOrder) {
         return entryService.getEntries(uuid, limit, offset, sortOrder);
     }
 
