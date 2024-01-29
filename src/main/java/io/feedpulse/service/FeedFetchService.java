@@ -7,6 +7,7 @@ import com.rometools.rome.io.FeedException;
 import com.rometools.rome.io.SyndFeedInput;
 import io.feedpulse.exceptions.FetchException;
 import io.feedpulse.exceptions.HtmlNotParsableException;
+import io.feedpulse.exceptions.RomeFeedParseException;
 import io.feedpulse.model.Feed;
 import io.feedpulse.model.Keyword;
 import io.feedpulse.repository.FeedRepository;
@@ -73,13 +74,17 @@ public class FeedFetchService {
      * @throws IllegalArgumentException If the feed URL is invalid.
      * @throws FetchException       If an error occurs while fetching the feed content.
      */
-    public SyndFeed fetchFeed(String feedUrl) throws FetchException, FeedException, IllegalArgumentException, FetchException {
+    public SyndFeed fetchFeed(String feedUrl) throws RomeFeedParseException, IllegalArgumentException, FetchException {
         URI uri = FetchUtil.isValidUrlOrNull(feedUrl);
         if (uri == null) {
             throw new FetchException(feedUrl);
         }
         Reader reader = FetchUtil.fetchAsReader(uri);
-        return new SyndFeedInput().build(reader);
+        try {
+            return new SyndFeedInput().build(reader);
+        } catch (FeedException e) {
+            throw new RomeFeedParseException(e);
+        }
     }
 
     /**
@@ -159,7 +164,7 @@ public class FeedFetchService {
      * @return An EssenceResult object containing the parsed data.
      * @throws HtmlNotParsableException If there is an error while parsing the HTML content of the entry.
      */
-    private EssenceResult parsePageContent(SyndEntry syndEntry) throws HtmlNotParsableException {
+    public EssenceResult parsePageContent(SyndEntry syndEntry) throws HtmlNotParsableException {
         String html = null;
         try {
             URI uri = FetchUtil.isValidUrlOrNull(syndEntry.getLink());

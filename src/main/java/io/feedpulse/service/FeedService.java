@@ -4,10 +4,7 @@ package io.feedpulse.service;
 import com.rometools.rome.feed.synd.SyndFeed;
 import io.feedpulse.dto.response.FeedDTO;
 import io.feedpulse.dto.response.PageableDTO;
-import io.feedpulse.exceptions.InvalidUuidException;
-import io.feedpulse.exceptions.MalformedFeedException;
-import io.feedpulse.exceptions.NoSuchFeedException;
-import io.feedpulse.model.Entry;
+import io.feedpulse.exceptions.*;
 import io.feedpulse.model.Feed;
 import io.feedpulse.model.User;
 import io.feedpulse.repository.FeedRepository;
@@ -39,7 +36,7 @@ public class FeedService {
     private final PagedResourcesAssembler<Feed> pagedResourcesAssembler;
 
 
-    public FeedService(FeedRepository feedRepository, EntryService entryService, UserService userService , FeedFetchService feedFetchService, UserEntryInteractionService userEntryInteractionService, PagedResourcesAssembler<Feed> pagedResourcesAssembler) {
+    public FeedService(FeedRepository feedRepository, EntryService entryService, UserService userService, FeedFetchService feedFetchService, UserEntryInteractionService userEntryInteractionService, PagedResourcesAssembler<Feed> pagedResourcesAssembler) {
         this.feedRepository = feedRepository;
         this.entryService = entryService;
         this.userService = userService;
@@ -78,7 +75,7 @@ public class FeedService {
         return PageableDTO.of(pagedModel, feedDTOs);
     }
 
-    public Feed getFeed(String uuidString) throws InvalidUuidException, NoSuchFeedException{
+    public Feed getFeed(String uuidString) throws InvalidUuidException, NoSuchFeedException {
         UUID uuid = UuidUtil.fromString(uuidString);
         User user = userService.getCurrentUser();
         Optional<Feed> feed = feedRepository.findFeedByUuidAndUsersId(uuid, user.getId());
@@ -145,4 +142,19 @@ public class FeedService {
         feedRepository.delete(feed);
     }
 
+    /**
+     * Validates a given feed URL.
+     *
+     * @param feedUrl The URL of the feed to be validated.
+     * @throws RomeFeedParseException If an error occurs while parsing or generating the feed.
+     * @throws NoFeedEntriesFoundException If no feed entries are found.
+     * @throws HtmlNotParsableException If there is an error while parsing the HTML content of the feed entry.
+     */
+    public void validateUrl(String feedUrl) throws RomeFeedParseException, NoFeedEntriesFoundException, HtmlNotParsableException {
+        SyndFeed syndFeed= feedFetchService.fetchFeed(feedUrl);
+        if (syndFeed.getEntries().isEmpty()) {
+            throw new NoFeedEntriesFoundException(feedUrl);
+        }
+        feedFetchService.parsePageContent(syndFeed.getEntries().get(0));
+    }
 }

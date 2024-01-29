@@ -5,15 +5,12 @@ import io.feedpulse.dto.response.EntryDTO;
 import io.feedpulse.dto.response.FeedDTO;
 import io.feedpulse.dto.response.PageableDTO;
 import io.feedpulse.exceptions.MalformedFeedException;
-import io.feedpulse.model.Entry;
 import io.feedpulse.model.Feed;
 import io.feedpulse.service.EntryService;
 import io.feedpulse.service.FeedService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/feeds")
@@ -64,5 +61,11 @@ public class FeedController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteFeed(@PathVariable String uuid) {
         feedService.deleteFeedForUser(uuid);
+    }
+
+    @GetMapping(value = "/validate-feed-url", produces = MediaType.APPLICATION_JSON_VALUE)
+    @ResponseStatus(HttpStatus.OK)
+    public void validateUrl(@RequestParam String feedUrl) {
+        feedService.validateUrl(feedUrl);
     }
 }
