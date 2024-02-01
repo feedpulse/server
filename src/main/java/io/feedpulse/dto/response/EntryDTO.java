@@ -14,7 +14,7 @@ public record EntryDTO(
         String description,
         String text,
         String author,
-        String publishedDate,
+        String pubDate,
         String[] keywords,
         boolean read,
         boolean favorite,
