@@ -1,7 +1,9 @@
 package io.feedpulse.controller;
 
+import io.feedpulse.dto.response.JwtResponseDTO;
 import io.feedpulse.model.User;
 import io.feedpulse.service.AuthService;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
@@ -23,8 +25,10 @@ public class AuthController {
 
     @PostMapping(value = {"/signin", "/login"})
     @ResponseStatus(HttpStatus.OK)
-    public String login(@RequestBody Map<String, String> params) {
-        return userService.loginUser(params);
+    public JwtResponseDTO login(@RequestBody Map<String, String> params, HttpServletResponse response) {
+        String jwt = userService.loginUser(params);
+        response.addHeader("Authorization", "Bearer " + jwt);
+        return new JwtResponseDTO(jwt);
     }
 
 
