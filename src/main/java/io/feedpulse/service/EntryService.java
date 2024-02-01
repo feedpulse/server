@@ -78,21 +78,21 @@ public class EntryService {
         entryRepository.delete(entry);
     }
 
-    private Page<Entry> getEntriesAsPage(String feedUuidString, Integer limit, Integer offset, Boolean sortOrder) throws InvalidUuidException {
+    private Page<Entry> getEntriesAsPage(String feedUuidString, Integer size, Integer page, Boolean sortOrder) throws InvalidUuidException {
         UUID feedUuid = UuidUtil.fromString(feedUuidString);
         var sort = sortOrder ? Sort.Direction.DESC : Sort.Direction.ASC;
-        Pageable pageable = PageRequest.of(offset, limit, sort, "pubDate");
+        Pageable pageable = PageRequest.of(page, size, sort, "pubDate");
         return entryRepository.findEntriesByFeedUuidAndUsersId(feedUuid, userService.getCurrentUser().getId(), pageable);
     }
 
-    private PagedModel<EntityModel<Entry>> getEntriesAsPagedModel(String feedUuidString, Integer limit, Integer offset, Boolean sortOrder) throws InvalidUuidException {
-        Page<Entry> entryList = getEntriesAsPage(feedUuidString, limit, offset, sortOrder);
+    private PagedModel<EntityModel<Entry>> getEntriesAsPagedModel(String feedUuidString, Integer size, Integer page, Boolean sortOrder) throws InvalidUuidException {
+        Page<Entry> entryList = getEntriesAsPage(feedUuidString, size, page, sortOrder);
         PagedModel<EntityModel<Entry>> pagedModel = pagedResourcesAssembler.toModel(entryList);
         return pagedModel;
     }
 
-    public PageableDTO<EntryDTO> getEntries(String feedUuidString, Integer limit, Integer offset, Boolean sortOrder) throws InvalidUuidException {
-        PagedModel<EntityModel<Entry>> pagedModel = getEntriesAsPagedModel(feedUuidString, limit, offset, sortOrder);
+    public PageableDTO<EntryDTO> getEntries(String feedUuidString, Integer size, Integer page, Boolean sortOrder) throws InvalidUuidException {
+        PagedModel<EntityModel<Entry>> pagedModel = getEntriesAsPagedModel(feedUuidString, size, page, sortOrder);
         List<EntryDTO> entryDTOs = pagedModel.getContent().stream()
                 .map(EntityModel::getContent)
                 .filter(Objects::nonNull)

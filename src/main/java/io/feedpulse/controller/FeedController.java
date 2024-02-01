@@ -44,10 +44,10 @@ public class FeedController {
     @ResponseStatus(HttpStatus.OK)
     @GetMapping(value = "/{uuid}/entries", produces = MediaType.APPLICATION_JSON_VALUE)
     public PageableDTO<EntryDTO> getFeedEntries(@PathVariable String uuid,
-                                                @RequestParam(defaultValue = "20") Integer limit,
-                                                @RequestParam(defaultValue = "0") Integer offset,
+                                                @RequestParam(defaultValue = "20") Integer size,
+                                                @RequestParam(defaultValue = "0") Integer page,
                                                 @RequestParam(required = false, defaultValue = "true") Boolean sortOrder) {
-        return entryService.getEntries(uuid, limit, offset, sortOrder);
+        return entryService.getEntries(uuid, size, page, sortOrder);
     }
 
     @PostMapping()
