@@ -48,7 +48,7 @@ public class UserService {
         String email = userUpdateRequestDTO.getEmail().orElse(null);
         if (email != null) {
             if (!EmailValidator.isValid(email)) {
-                throw new InvalidEmailException(email);
+                throw new InvalidEmailException();
             }
             updatedUser.setEmail(email);
             updatedUser.setUsername(email);

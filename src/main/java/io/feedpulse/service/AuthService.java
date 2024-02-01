@@ -1,15 +1,20 @@
 package io.feedpulse.service;
 
+import io.feedpulse.exceptions.InvalidCredentialsException;
+import io.feedpulse.exceptions.InvalidEmailException;
+import io.feedpulse.exceptions.WrongPasswordException;
 import io.feedpulse.model.Role;
 import io.feedpulse.model.User;
 import io.feedpulse.repository.RoleRepository;
 import io.feedpulse.repository.UserRepository;
 import io.feedpulse.util.JwtUtil;
+import io.feedpulse.validation.EmailValidator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -69,22 +74,28 @@ public class AuthService {
 
     public String loginUser(Map<String, String> params) {
         String email = params.getOrDefault("email", null);
-        if (email == null) throw new IllegalArgumentException("Email is required");
+        if (email == null || email.isBlank() || !EmailValidator.isValid(email)) throw new InvalidEmailException();
 
         String password = params.getOrDefault("password", null);
-        if (password == null) throw new IllegalArgumentException("Password is required");
+        if (password == null || password.isBlank()) throw new WrongPasswordException();
 
         return loginUser(email, password);
     }
 
     public String loginUser(@NonNull String email, @NonNull String password) {
+        UsernamePasswordAuthenticationToken authenticationToken;
+        Authentication authentication;
 
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(email, password));
+        try {
+            authenticationToken = new UsernamePasswordAuthenticationToken(email, password);
+            authentication = authenticationManager.authenticate(authenticationToken);
+        } catch (AuthenticationException e) {
+            throw new InvalidCredentialsException();
+        }
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
-        String jwt = jwtUtil.generateToken(authentication);
-        return jwt;
+        return jwtUtil.generateToken(authentication);
     }
+
 
 }
