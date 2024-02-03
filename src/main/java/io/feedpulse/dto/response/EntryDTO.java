@@ -9,7 +9,7 @@ public record EntryDTO(
         UUID uuid,
         UUID feedUuid,
         String title,
-        String url,
+        String link,
         String imageUrl,
         String description,
         String text,
