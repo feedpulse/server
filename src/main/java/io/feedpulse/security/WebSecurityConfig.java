@@ -106,6 +106,7 @@ public class WebSecurityConfig {
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/auth/**").permitAll()
                         .requestMatchers("/").permitAll()
+                        .requestMatchers("/meta/**").permitAll()
                         .anyRequest().authenticated()
 //                        .anyRequest().permitAll()
                 )
