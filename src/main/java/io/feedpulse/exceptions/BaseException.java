@@ -27,4 +27,7 @@ public class BaseException extends RuntimeException {
         this.remedy = remedy;
     }
 
+    public String toJson() {
+        return "{\"timestamp\":\"" + getTimestamp() + "\",\"status\":" + getStatus() + ",\"error\":\"" + getMessage() + "\",\"message\":\"" + getDetails() + "\",\"remedy\":\"" + getRemedy() + "\"}";
+    }
 }

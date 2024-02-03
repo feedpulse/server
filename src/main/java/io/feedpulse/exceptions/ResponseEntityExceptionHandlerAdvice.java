@@ -1,8 +1,9 @@
 package io.feedpulse.exceptions;
 
 import io.feedpulse.dto.response.ExceptionResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
@@ -12,6 +13,8 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @RestControllerAdvice
 public class ResponseEntityExceptionHandlerAdvice {
 
+    private static final Logger log = LoggerFactory.getLogger(ResponseEntityExceptionHandlerAdvice.class);
+
     /**
      * This is an exception handler for all subclasses of 'BaseException' (which is a subclass of 'RuntimeException').
      * If any of these exceptions are thrown within the application, this handler catches them and returns a {@link ExceptionResponse} object.
@@ -20,6 +23,7 @@ public class ResponseEntityExceptionHandlerAdvice {
      */
     @ExceptionHandler({BaseException.class})
     protected ResponseEntity<ExceptionResponse> handleCustomExceptions(BaseException ex) {
+        log.error("BaseException: ", ex);
         return new ResponseEntity<>(ExceptionResponse.fromException(ex), HttpStatus.valueOf(ex.getStatus()));
     }
 
@@ -29,6 +33,7 @@ public class ResponseEntityExceptionHandlerAdvice {
      */
     @ExceptionHandler({AccessDeniedException.class})
     protected ResponseEntity<ExceptionResponse> handleAccessDeniedException(AccessDeniedException ex) {
+        log.error("AccessDeniedException: ", ex);
         BaseException e = new NotAuthenticatedException();
         return new ResponseEntity<>(ExceptionResponse.fromException(e), HttpStatus.valueOf(e.getStatus()));
     }
@@ -40,6 +45,7 @@ public class ResponseEntityExceptionHandlerAdvice {
     @ExceptionHandler({HttpMessageNotReadableException.class})
     public ResponseEntity<ExceptionResponse> handleHttpMessageNotReadableException(HttpMessageNotReadableException ex) {
         BaseException e =  new InvalidRequestBodyException();
+        log.error("HttpMessageNotReadableException: ", ex);
         return new ResponseEntity<>(ExceptionResponse.fromException(e), HttpStatus.valueOf(e.getStatus()));
     }
 
@@ -54,6 +60,7 @@ public class ResponseEntityExceptionHandlerAdvice {
      */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ExceptionResponse> handleException(Exception ex) {
+        log.error("Exception: ", ex);
         BaseException e = new BaseException(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Internal Server Error", "Internal Server Error", "Internal Server Error");
         return new ResponseEntity<>(ExceptionResponse.fromException(e), HttpStatus.valueOf(e.getStatus()));
     }

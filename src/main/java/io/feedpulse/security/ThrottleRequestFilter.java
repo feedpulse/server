@@ -1,5 +1,6 @@
 package io.feedpulse.security;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
 import io.feedpulse.exceptions.BaseException;
@@ -15,9 +16,9 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
-@Component
+//@Component
 public class ThrottleRequestFilter extends OncePerRequestFilter {
-    private int MAX_REQUESTS_PER_MINUTE = 25; //or whatever you want it to be
+    private int MAX_REQUESTS_PER_MINUTE = 20; //or whatever you want it to be
 
     private LoadingCache<String, Integer> requestCountsPerIpAddress;
 
@@ -30,7 +31,13 @@ public class ThrottleRequestFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         String clientIpAddress = getClientIP(request);
         if(isMaximumRequestsPerSecondExceeded(clientIpAddress)){
-            throw new TooManyRequestsException();
+            // Filters are processed before the dispatcher servlet, so the @RestControllerAdvice will not handle the exception
+            // So we handle it here and directly write the response
+            TooManyRequestsException ex = new TooManyRequestsException();
+            response.setStatus(HttpStatus.TOO_MANY_REQUESTS.value());
+            response.setContentType("application/json");
+            response.getWriter().write(ex.toJson());
+            return;
         }
         filterChain.doFilter(request, response);
     }

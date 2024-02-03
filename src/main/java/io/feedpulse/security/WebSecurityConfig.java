@@ -52,6 +52,11 @@ public class WebSecurityConfig {
     }
 
     @Bean
+    public ThrottleRequestFilter throttleRequestFilter() {
+        return new ThrottleRequestFilter();
+    }
+
+    @Bean
     public DaoAuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
 
@@ -86,7 +91,7 @@ public class WebSecurityConfig {
     CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(Arrays.asList(webappUrlProd, webappUrlDev));
-        configuration.setAllowedMethods(Arrays.asList("GET","POST", "PUT", "PATCH", "DELETE"));
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE"));
         configuration.setAllowedHeaders(Arrays.asList("Authorization", "Cache-Control", "Content-Type"));
         configuration.setExposedHeaders(Arrays.asList("Authorization"));
         configuration.applyPermitDefaultValues();
@@ -96,7 +101,6 @@ public class WebSecurityConfig {
     }
 
 
-
     @Bean
     public DefaultSecurityFilterChain configure(HttpSecurity http) throws Exception {
         http.csrf(csr -> csr.disable())
@@ -104,16 +108,17 @@ public class WebSecurityConfig {
                 .exceptionHandling(exception -> exception.authenticationEntryPoint(unauthorizedHandler))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers("/auth/**").permitAll()
-                        .requestMatchers("/").permitAll()
-                        .requestMatchers("/meta/**").permitAll()
-                        .anyRequest().authenticated()
+                                .requestMatchers("/auth/**").permitAll()
+                                .requestMatchers("/").permitAll()
+                                .requestMatchers("/meta/**").permitAll()
+                                .anyRequest().authenticated()
 //                        .anyRequest().permitAll()
                 )
-
                 .addFilterBefore(authenticationJwtTokenFilter(), UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(throttleRequestFilter(), authenticationJwtTokenFilter().getClass())
                 .authenticationProvider(authenticationProvider());
 
         return http.build();
     }
+
 }
