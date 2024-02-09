@@ -60,7 +60,6 @@ public class FeedService {
 
     private PagedModel<EntityModel<Feed>> getFeedsAsPagedModel(Integer size, Integer page, Boolean sortOrder) {
         Page<Feed> feeds = getFeedsAsPage(size, page, sortOrder);
-        feeds.stream().toList().forEach(feed -> System.out.println(feed.getTitle()));
         PagedModel<EntityModel<Feed>> pagedModel = pagedResourcesAssembler.toModel(feeds);
         return pagedModel;
     }
@@ -85,7 +84,7 @@ public class FeedService {
         return feed.get();
     }
 
-    public Feed addFeed(String feedUrl) throws MalformedFeedException {
+    public FeedDTO addFeed(String feedUrl) throws MalformedFeedException {
         User user = userService.getCurrentUser();
         Optional<Feed> existingFeed = feedRepository.findByFeedUrl(feedUrl);
         if (existingFeed.isPresent()) {
@@ -95,7 +94,7 @@ public class FeedService {
                 user.getFeeds().add(existingFeed.get());
             }
             userService.saveUser(user);
-            return existingFeed.get();
+            return FeedDTO.of(existingFeed.get());
         }
 
         Feed.FeedBuilder feedBuilder = new Feed.FeedBuilder();
@@ -117,7 +116,7 @@ public class FeedService {
         user.getFeeds().add(feed);
         userService.saveUser(user);
         feedFetchService.fetchFeed(feed);
-        return feed;
+        return FeedDTO.of(feed);
     }
 
     @Transactional

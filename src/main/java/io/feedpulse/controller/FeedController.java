@@ -52,9 +52,8 @@ public class FeedController {
 
     @PostMapping()
     @ResponseStatus(HttpStatus.CREATED)
-    public Feed addFeed(@RequestParam String feedUrl) throws MalformedFeedException {
-        Feed feed = feedService.addFeed(feedUrl);
-        return feed;
+    public FeedDTO addFeed(@RequestParam String feedUrl) throws MalformedFeedException {
+        return feedService.addFeed(feedUrl);
     }
 
     @DeleteMapping("/{uuid}")

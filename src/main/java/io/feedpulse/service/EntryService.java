@@ -126,7 +126,7 @@ public class EntryService {
         return PageableDTO.of(pagedModel, entryList);
     }
 
-    public @NonNull Entry getEntry(@Nullable String uuidString) throws InvalidUuidException, NoSuchEntryException {
+    private @NonNull Entry getEntryFromDB(@Nullable String uuidString) throws InvalidUuidException, NoSuchEntryException {
         User user = userService.getCurrentUser();
         UUID uuid = UuidUtil.fromString(uuidString);
         Optional<Entry> entry = entryRepository.findEntryByUuidAndUsersId(uuid, user.getId());
@@ -135,6 +135,15 @@ public class EntryService {
         }
         return entry.get();
     }
+
+    public @NonNull EntryDTO getEntry(@Nullable String uuidString) throws InvalidUuidException, NoSuchEntryException {
+        Entry entry = getEntryFromDB(uuidString);
+        UserEntryInteraction userEntryInteraction = userEntryInteractionRepository
+                .findByUserIdAndEntryUuid(userService.getCurrentUser().getId(), UuidUtil.fromString(uuidString))
+                .orElse(new UserEntryInteraction(userService.getCurrentUser(), getEntryFromDB(uuidString)));
+        return EntryDTO.of( entry, userEntryInteraction);
+    }
+
 
     public Optional<Entry> getUserEntryByLink(String link) {
         User user = userService.getCurrentUser();
@@ -147,7 +156,7 @@ public class EntryService {
 
     public void updateEntry(String entryUuid, @Nullable Boolean read, @Nullable Boolean favorite, @Nullable Boolean bookmark) throws InvalidUuidException, NoSuchEntryException {
         User user = userService.getCurrentUser();
-        Entry entry = getEntry(entryUuid);
+        Entry entry = getEntryFromDB(entryUuid);
         UserEntryInteraction userEntryInteraction = userEntryInteractionRepository
                 .findByUserIdAndEntryUuid(user.getId(), entry.getUuid())
                 .orElse(new UserEntryInteraction(user, entry));

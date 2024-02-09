@@ -33,7 +33,7 @@ public class EntryController {
 
     @ResponseStatus(HttpStatus.OK)
     @GetMapping("/{uuid}")
-    public Entry getEntry(@PathVariable String uuid) throws InvalidUuidException, NoSuchEntryException {
+    public EntryDTO getEntry(@PathVariable String uuid) throws InvalidUuidException, NoSuchEntryException {
         return entryService.getEntry(uuid);
     }
 
