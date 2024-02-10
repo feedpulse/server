@@ -50,27 +50,17 @@ public class FeedService {
         return feedRepository.findAll();
     }
 
-    private Page<Feed> getFeedsAsPage(Integer size, Integer page, Boolean sortOrder) {
-        User user = userService.getCurrentUser();
-        var by = Sort.by("pubDate");
-        var sort = sortOrder ? by.ascending() : by.descending();
-        Pageable pageable = PageRequest.of(page, size, sort);
-        return feedRepository.findFeedsByUsersId(user.getId(), pageable);
-    }
 
-    private PagedModel<EntityModel<Feed>> getFeedsAsPagedModel(Integer size, Integer page, Boolean sortOrder) {
-        Page<Feed> feeds = getFeedsAsPage(size, page, sortOrder);
+    private PagedModel<EntityModel<Feed>> getFeedsAsPagedModel(Pageable pageRequest) {
+        User user = userService.getCurrentUser();
+        Page<Feed> feeds = feedRepository.findFeedsByUsersId(user.getId(), pageRequest);
         PagedModel<EntityModel<Feed>> pagedModel = pagedResourcesAssembler.toModel(feeds);
         return pagedModel;
     }
 
     public PageableDTO<FeedDTO> getFeeds(Integer size, Integer page, Boolean sortOrder) {
-        PagedModel<EntityModel<Feed>> pagedModel = getFeedsAsPagedModel(size, page, sortOrder);
-        List<FeedDTO> feedDTOs = pagedModel.getContent().stream()
-                .map(EntityModel::getContent)
-                .filter(Objects::nonNull)
-                .map(FeedDTO::of)
-                .toList();
+        PagedModel<EntityModel<Feed>> pagedModel = getFeedsAsPagedModel(createPageRequest(size, page, sortOrder));
+        List<FeedDTO> feedDTOs = convertToFeedDTO(pagedModel);
         return PageableDTO.of(pagedModel, feedDTOs);
     }
 
@@ -155,5 +145,19 @@ public class FeedService {
             throw new NoFeedEntriesFoundException(feedUrl);
         }
         feedFetchService.parsePageContent(syndFeed.getEntries().get(0));
+    }
+
+    private Pageable createPageRequest(Integer size, Integer page, Boolean sortOrder) {
+        var by = Sort.by("pubDate");
+        var sort = sortOrder ? by.ascending() : by.descending();
+        return PageRequest.of(page, size, sort);
+    }
+
+    private List<FeedDTO> convertToFeedDTO(PagedModel<EntityModel<Feed>> pagedModel) {
+        return pagedModel.getContent().stream()
+                .map(EntityModel::getContent)
+                .filter(Objects::nonNull)
+                .map(FeedDTO::of)
+                .toList();
     }
 }

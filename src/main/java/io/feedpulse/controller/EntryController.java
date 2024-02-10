@@ -5,7 +5,6 @@ import io.feedpulse.dto.response.EntryDTO;
 import io.feedpulse.dto.response.PageableDTO;
 import io.feedpulse.exceptions.InvalidUuidException;
 import io.feedpulse.exceptions.NoSuchEntryException;
-import io.feedpulse.model.Entry;
 import io.feedpulse.service.EntryService;
 import org.springframework.http.HttpStatus;
 import org.springframework.lang.NonNull;
@@ -28,7 +27,7 @@ public class EntryController {
             @RequestParam(defaultValue = "0") Integer page,
             @RequestParam(required = false, defaultValue = "true") Boolean sortOrder
     ) {
-        return entryService.getEntries(size, page, sortOrder);
+        return entryService.getFeedEntries(size, page, sortOrder);
     }
 
     @ResponseStatus(HttpStatus.OK)

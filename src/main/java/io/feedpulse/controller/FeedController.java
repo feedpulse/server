@@ -47,7 +47,7 @@ public class FeedController {
                                                 @RequestParam(defaultValue = "20") Integer size,
                                                 @RequestParam(defaultValue = "0") Integer page,
                                                 @RequestParam(required = false, defaultValue = "true") Boolean sortOrder) {
-        return entryService.getEntries(uuid, size, page, sortOrder);
+        return entryService.getFeedEntries(uuid, size, page, sortOrder);
     }
 
     @PostMapping()

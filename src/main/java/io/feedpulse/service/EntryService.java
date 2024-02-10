@@ -78,51 +78,29 @@ public class EntryService {
         entryRepository.delete(entry);
     }
 
-    private Page<Entry> getEntriesAsPage(String feedUuidString, Integer size, Integer page, Boolean sortOrder) throws InvalidUuidException {
-        UUID feedUuid = UuidUtil.fromString(feedUuidString);
-        var sort = sortOrder ? Sort.Direction.DESC : Sort.Direction.ASC;
-        Pageable pageable = PageRequest.of(page, size, sort, "pubDate");
-        return entryRepository.findEntriesByFeedUuidAndUsersId(feedUuid, userService.getCurrentUser().getId(), pageable);
-    }
-
-    private PagedModel<EntityModel<Entry>> getEntriesAsPagedModel(String feedUuidString, Integer size, Integer page, Boolean sortOrder) throws InvalidUuidException {
-        Page<Entry> entryList = getEntriesAsPage(feedUuidString, size, page, sortOrder);
-        PagedModel<EntityModel<Entry>> pagedModel = pagedResourcesAssembler.toModel(entryList);
+    private PagedModel<EntityModel<Entry>> getPagedModelOfEntries(UUID feedUuid, Pageable pageRequest) throws InvalidUuidException {
+        Page<Entry> pageOfEntries = entryRepository.findEntriesByFeedUuidAndUsersId(feedUuid, userService.getCurrentUser().getId(), pageRequest);
+        PagedModel<EntityModel<Entry>> pagedModel = pagedResourcesAssembler.toModel(pageOfEntries);
         return pagedModel;
     }
 
-    public PageableDTO<EntryDTO> getEntries(String feedUuidString, Integer size, Integer page, Boolean sortOrder) throws InvalidUuidException {
-        PagedModel<EntityModel<Entry>> pagedModel = getEntriesAsPagedModel(feedUuidString, size, page, sortOrder);
-        List<EntryDTO> entryDTOs = pagedModel.getContent().stream()
-                .map(EntityModel::getContent)
-                .filter(Objects::nonNull)
-                .map(entry -> toEntryDTO(entry, userService.getCurrentUser()))
-                .toList();
+    public PageableDTO<EntryDTO> getFeedEntries(String feedUuidString, Integer size, Integer page, Boolean sortOrder) throws InvalidUuidException {
+        UUID feedUuid = UuidUtil.fromString(feedUuidString);
+        PagedModel<EntityModel<Entry>> pagedModel = getPagedModelOfEntries(feedUuid, createPageRequest(size, page, sortOrder));
+        List<EntryDTO> entryDTOs = convertToEntryDTOs(pagedModel);
         return PageableDTO.of(pagedModel, entryDTOs);
     }
 
-    private Page<Entry> getEntriesAsPage(Integer size, Integer page, Boolean sortOrder) {
+    private PagedModel<EntityModel<Entry>> getPagedModelOfEntries(Pageable pageRequest) {
         User user = userService.getCurrentUser();
-        var by = Sort.by("pubDate");
-        var sort = sortOrder ? by.ascending() : by.descending();
-        Pageable pageable = PageRequest.of(page, size, sort);
-        return entryRepository.findEntriesByUsersId(user.getId(), pageable);
-//        return entryRepository.findEntriesByUsersId(user.getId(), pageable).map(entry -> toEntryDTO(entry, user));
-    }
-
-    private PagedModel<EntityModel<Entry>> getEntriesAsPagedModel(Integer size, Integer page, Boolean sortOrder) {
-        Page<Entry> entryList = getEntriesAsPage(size, page, sortOrder);
+        Page<Entry> entryList = entryRepository.findEntriesByUsersId(user.getId(), pageRequest);
         PagedModel<EntityModel<Entry>> pagedModel = pagedResourcesAssembler.toModel(entryList);
         return pagedModel;
     }
 
-    public PageableDTO<EntryDTO> getEntries(Integer size, Integer page, Boolean sortOrder) {
-        PagedModel<EntityModel<Entry>> pagedModel = getEntriesAsPagedModel(size, page, sortOrder);
-        List<EntryDTO> entryList = pagedModel.getContent().stream()
-                .map(EntityModel::getContent)
-                .filter(Objects::nonNull)
-                .map(entry -> toEntryDTO(entry, userService.getCurrentUser()))
-                .toList();
+    public PageableDTO<EntryDTO> getFeedEntries(Integer size, Integer page, Boolean sortOrder) {
+        PagedModel<EntityModel<Entry>> pagedModel = getPagedModelOfEntries(createPageRequest(size, page, sortOrder));
+        List<EntryDTO> entryList = convertToEntryDTOs(pagedModel);
         return PageableDTO.of(pagedModel, entryList);
     }
 
@@ -198,51 +176,44 @@ public class EntryService {
         entryRepository.save(entry);
     }
 
-    private Page<Entry> getFavoriteEntriesAsPage(Integer size, Integer page, Boolean sortOrder) {
-        User user = userService.getCurrentUser();
-        var by = Sort.by("pubDate");
-        var sort = sortOrder ? by.ascending() : by.descending();
-        Pageable pageable = PageRequest.of(page, size, sort);
-        return entryRepository.findFavoriteEntriesByUsersId(user.getId(), pageable);
-    }
 
-    private PagedModel<EntityModel<Entry>> getFavoriteEntriesAsPagedModel(Integer size, Integer page, Boolean sortOrder) {
-        Page<Entry> entryList = getFavoriteEntriesAsPage(size, page, sortOrder);
+    private PagedModel<EntityModel<Entry>> getPagedModelOfFavoriteEntries(Pageable pageRequest) {
+        User user = userService.getCurrentUser();
+        Page<Entry> entryList = entryRepository.findFavoriteEntriesByUsersId(user.getId(), pageRequest);
         PagedModel<EntityModel<Entry>> pagedModel = pagedResourcesAssembler.toModel(entryList);
         return pagedModel;
     }
 
     public PageableDTO<EntryDTO> getFavoriteEntries(Integer size, Integer page, Boolean sortOrder) {
-        PagedModel<EntityModel<Entry>> pagedModel = getFavoriteEntriesAsPagedModel(size, page, sortOrder);
-        List<EntryDTO> entryList = pagedModel.getContent().stream()
-                .map(EntityModel::getContent)
-                .filter(Objects::nonNull)
-                .map(entry -> toEntryDTO(entry, userService.getCurrentUser()))
-                .toList();
+        PagedModel<EntityModel<Entry>> pagedModel = getPagedModelOfFavoriteEntries(createPageRequest(size, page, sortOrder));
+        List<EntryDTO> entryList = convertToEntryDTOs(pagedModel);
         return PageableDTO.of(pagedModel, entryList);
     }
 
-    private Page<Entry> getBookmarkedEntriesAsPage(Integer size, Integer page, Boolean sortOrder) {
+    private PagedModel<EntityModel<Entry>> getPagedModelOfBookmarkedEntries(Pageable pageRequest) {
         User user = userService.getCurrentUser();
-        var by = Sort.by("pubDate");
-        var sort = sortOrder ? by.ascending() : by.descending();
-        Pageable pageable = PageRequest.of(page, size, sort);
-        return entryRepository.findBookmarkedEntriesByUsersId(user.getId(), pageable);
-    }
-
-    private PagedModel<EntityModel<Entry>> getBookmarkedEntriesAsPagedModel(Integer size, Integer page, Boolean sortOrder) {
-        Page<Entry> entryList = getBookmarkedEntriesAsPage(size, page, sortOrder);
+        Page<Entry> entryList = entryRepository.findBookmarkedEntriesByUsersId(user.getId(), pageRequest);
         PagedModel<EntityModel<Entry>> pagedModel = pagedResourcesAssembler.toModel(entryList);
         return pagedModel;
     }
 
     public PageableDTO<EntryDTO> getBookmarkedEntries(Integer size, Integer page, Boolean sortOrder) {
-        PagedModel<EntityModel<Entry>> pagedModel = getBookmarkedEntriesAsPagedModel(size, page, sortOrder);
-        List<EntryDTO> entryList = pagedModel.getContent().stream()
+        PagedModel<EntityModel<Entry>> pagedModel = getPagedModelOfBookmarkedEntries(createPageRequest(size, page, sortOrder));
+        List<EntryDTO> entryList = convertToEntryDTOs(pagedModel);
+        return PageableDTO.of(pagedModel, entryList);
+    }
+
+    private Pageable createPageRequest(Integer size, Integer page, Boolean sortOrder) {
+        var by = Sort.by("pubDate");
+        var sort = sortOrder ? by.ascending() : by.descending();
+        return PageRequest.of(page, size, sort);
+    }
+
+    private List<EntryDTO> convertToEntryDTOs(PagedModel<EntityModel<Entry>> pagedModel) {
+        return pagedModel.getContent().stream()
                 .map(EntityModel::getContent)
                 .filter(Objects::nonNull)
                 .map(entry -> toEntryDTO(entry, userService.getCurrentUser()))
                 .toList();
-        return PageableDTO.of(pagedModel, entryList);
     }
 }
