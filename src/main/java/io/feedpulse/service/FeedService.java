@@ -147,6 +147,14 @@ public class FeedService {
         feedFetchService.parsePageContent(syndFeed.getEntries().get(0));
     }
 
+    public PageableDTO<FeedDTO> searchFeeds(String searchString, Integer size, Integer page, Boolean sortOrder) {
+        Pageable pageRequest = createPageRequest(size, page, sortOrder);
+        Page<Feed> feedList = feedRepository.searchFeedsByUserId(userService.getCurrentUser().getId(), searchString, pageRequest);
+        PagedModel<EntityModel<Feed>> pagedModel = pagedResourcesAssembler.toModel(feedList);
+        List<FeedDTO> feedDTOList = convertToFeedDTO(pagedModel);
+        return PageableDTO.of(pagedModel, feedDTOList);
+    }
+
     private Pageable createPageRequest(Integer size, Integer page, Boolean sortOrder) {
         var by = Sort.by("pubDate");
         var sort = sortOrder ? by.ascending() : by.descending();
@@ -160,4 +168,6 @@ public class FeedService {
                 .map(FeedDTO::of)
                 .toList();
     }
+
+
 }

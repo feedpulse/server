@@ -15,6 +15,7 @@ import java.util.stream.Stream;
 public interface EntryRepository extends JpaRepository<Entry, UUID> {
 
     Optional<Entry> findByLink(String link);
+
     Page<Entry> findAllByFeedUuid(UUID feedUuid, Pageable pageable);
 
     @Query("SELECT e.uuid FROM Entry e WHERE e.feed = :feed")
@@ -37,4 +38,16 @@ public interface EntryRepository extends JpaRepository<Entry, UUID> {
 
     @Query("SELECT e FROM Entry e JOIN e.userEntryInteractions uei JOIN uei.user u WHERE u.id = :id AND uei.bookmark = true")
     Page<Entry> findBookmarkedEntriesByUsersId(Long id, Pageable pageable);
+
+    @Query("SELECT e FROM Entry e JOIN e.feed f JOIN f.users u WHERE u.id = :id AND (e.title LIKE %:searchString% OR e.text LIKE %:searchString%)")
+    Page<Entry> searchEntriesByUsersId(Long id, String searchString, Pageable pageable);
+
+    @Query("SELECT e FROM Entry e JOIN e.feed f JOIN f.users u WHERE u.id = :userId AND f.uuid = :feedUuid AND (e.title LIKE %:searchString% OR e.text LIKE %:searchString%)")
+    Page<Entry> searchEntriesByFeedUuidAndUsersId(UUID feedUuid, Long userId, String searchString, Pageable pageable);
+
+    @Query("SELECT e FROM Entry e JOIN e.userEntryInteractions uei JOIN uei.user u WHERE u.id = :userId AND (e.title LIKE %:searchString% OR e.text LIKE %:searchString%)")
+    Page<Entry> searchBookmarkedEntriesByUsersId(Long userId, String searchString, Pageable pageRequest);
+
+    @Query("SELECT e FROM Entry e JOIN e.userEntryInteractions uei JOIN uei.user u WHERE u.id = :userId AND (e.title LIKE %:searchString% OR e.text LIKE %:searchString%)")
+    Page<Entry> searchFavoriteEntriesByUsersId(Long userId, String searchString, Pageable pageRequest);
 }

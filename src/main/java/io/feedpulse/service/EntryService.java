@@ -203,6 +203,39 @@ public class EntryService {
         return PageableDTO.of(pagedModel, entryList);
     }
 
+    public PageableDTO<EntryDTO> searchEntries(String searchString, Integer size, Integer page, Boolean sortOrder) {
+        Pageable pageRequest = createPageRequest(size, page, sortOrder);
+        Page<Entry> entryList = entryRepository.searchEntriesByUsersId(userService.getCurrentUser().getId(), searchString, pageRequest);
+        PagedModel<EntityModel<Entry>> pagedModel = pagedResourcesAssembler.toModel(entryList);
+        List<EntryDTO> entryListDTO = convertToEntryDTOs(pagedModel);
+        return PageableDTO.of(pagedModel, entryListDTO);
+    }
+
+    public PageableDTO<EntryDTO> searchFeedEntries(String feedId, String searchString, Integer size, Integer page, Boolean sortOrder) {
+        UUID feedUuid = UuidUtil.fromString(feedId);
+        Pageable pageRequest = createPageRequest(size, page, sortOrder);
+        Page<Entry> entryList = entryRepository.searchEntriesByFeedUuidAndUsersId(feedUuid, userService.getCurrentUser().getId(), searchString, pageRequest);
+        PagedModel<EntityModel<Entry>> pagedModel = pagedResourcesAssembler.toModel(entryList);
+        List<EntryDTO> entryListDTO = convertToEntryDTOs(pagedModel);
+        return PageableDTO.of(pagedModel, entryListDTO);
+    }
+
+    public PageableDTO<EntryDTO> searchBookmarkedEntries(String searchString, Integer size, Integer page, Boolean sortOrder) {
+        Pageable pageRequest = createPageRequest(size, page, sortOrder);
+        Page<Entry> entryList = entryRepository.searchBookmarkedEntriesByUsersId(userService.getCurrentUser().getId(), searchString, pageRequest);
+        PagedModel<EntityModel<Entry>> pagedModel = pagedResourcesAssembler.toModel(entryList);
+        List<EntryDTO> entryListDTO = convertToEntryDTOs(pagedModel);
+        return PageableDTO.of(pagedModel, entryListDTO);
+    }
+
+    public PageableDTO<EntryDTO> searchFavoriteEntries(String searchString, Integer size, Integer page, Boolean sortOrder) {
+        Pageable pageRequest = createPageRequest(size, page, sortOrder);
+        Page<Entry> entryList = entryRepository.searchFavoriteEntriesByUsersId(userService.getCurrentUser().getId(), searchString, pageRequest);
+        PagedModel<EntityModel<Entry>> pagedModel = pagedResourcesAssembler.toModel(entryList);
+        List<EntryDTO> entryListDTO = convertToEntryDTOs(pagedModel);
+        return PageableDTO.of(pagedModel, entryListDTO);
+    }
+
     private Pageable createPageRequest(Integer size, Integer page, Boolean sortOrder) {
         var by = Sort.by("pubDate");
         var sort = sortOrder ? by.ascending() : by.descending();
