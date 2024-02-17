@@ -19,18 +19,24 @@ public class SpringUserDetails implements UserDetails {
 
     private String email;
 
-//    @JsonIgnore
+    private boolean isUserEnabled;
+
+    private boolean isUserLocked;
+
+    //    @JsonIgnore
     private String password;
 
     private Collection<? extends GrantedAuthority> authorities;
 
     public SpringUserDetails(Long id, String email, String password,
-                           Collection<? extends GrantedAuthority> authorities) {
+                             boolean userEnabled, boolean userLocked, Collection<? extends GrantedAuthority> authorities) {
         this.id = id;
         this.username = email;
         this.email = email;
         this.password = password;
         this.authorities = authorities;
+        this.isUserEnabled = userEnabled;
+        this.isUserLocked = userLocked;
     }
 
     public static SpringUserDetails build(User user) {
@@ -42,6 +48,8 @@ public class SpringUserDetails implements UserDetails {
                 user.getId(),
                 user.getEmail(),
                 user.getPassword(),
+                user.isUserEnabled(),
+                user.isUserLocked(),
                 authorities);
     }
 
@@ -75,7 +83,7 @@ public class SpringUserDetails implements UserDetails {
 
     @Override
     public boolean isAccountNonLocked() {
-        return true;
+        return !isUserLocked;
     }
 
     @Override
@@ -85,7 +93,7 @@ public class SpringUserDetails implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return true;
+        return isUserEnabled;
     }
 
     @Override

@@ -30,6 +30,10 @@ public class User implements Serializable {
     @Column(unique = true)
     private String email;
 
+    private boolean isUserEnabled = false;
+
+    private boolean isUserLocked = false;
+
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "user_roles",
             joinColumns = @JoinColumn(name = "user_id"),
@@ -46,13 +50,11 @@ public class User implements Serializable {
     @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
     private List<UserEntryInteraction> userEntryInteractions = new ArrayList<>();
 
-    public User(@NonNull String username, @NonNull String password, @NonNull String email, Set<Role> roles, List<Feed> feeds, List<UserEntryInteraction> userEntryInteractions) {
+    public User(@NonNull String username, @NonNull String password, @NonNull String email, Set<Role> roles) {
         this.username = username;
         this.password = password;
         this.email = email;
         this.roles = roles;
-        this.feeds = feeds;
-        this.userEntryInteractions = userEntryInteractions;
     }
 
     protected User() {
@@ -88,6 +90,22 @@ public class User implements Serializable {
 
     public void setEmail(String email) {
         this.email = email;
+    }
+
+    public boolean isUserEnabled() {
+        return isUserEnabled;
+    }
+
+    public void setUserEnabled(boolean userEnabled) {
+        isUserEnabled = userEnabled;
+    }
+
+    public boolean isUserLocked() {
+        return isUserLocked;
+    }
+
+    public void setUserLocked(boolean userLocked) {
+        isUserLocked = userLocked;
     }
 
     public void setRoles(Set<Role> roles) {
@@ -183,7 +201,7 @@ public class User implements Serializable {
         }
 
         public User build() {
-            return new User(username, password, email, roles, feeds, userEntryInteractions);
+            return new User(username, password, email, roles);
         }
     }
 }

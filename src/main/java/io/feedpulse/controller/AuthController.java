@@ -1,5 +1,6 @@
 package io.feedpulse.controller;
 
+import io.feedpulse.dto.request.AccountRequestDTO;
 import io.feedpulse.dto.response.JwtResponseDTO;
 import io.feedpulse.model.User;
 import io.feedpulse.service.AuthService;
@@ -40,6 +41,11 @@ public class AuthController {
             throw new UnsupportedOperationException("Registration is not supported in production mode");
         }
         return userService.createUser(params);
+    }
+    @PostMapping("request-account")
+    @ResponseStatus(HttpStatus.OK)
+    public void requestAccount(@RequestBody AccountRequestDTO accountRequestDTO) {
+        userService.requestAccount(accountRequestDTO);
     }
 
 }
