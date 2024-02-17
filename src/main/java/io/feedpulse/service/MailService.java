@@ -1,12 +1,16 @@
 package io.feedpulse.service;
 
 import io.feedpulse.config.MailConfig;
+import io.feedpulse.model.User;
 import org.simplejavamail.api.email.Email;
+import org.simplejavamail.api.email.Recipient;
 import org.simplejavamail.api.mailer.Mailer;
 import org.simplejavamail.email.EmailBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @Service
 public class MailService {
@@ -16,10 +20,27 @@ public class MailService {
     private final MailConfig mailConfig;
 
     private final Mailer mailer;
+    private final UserService userService;
 
-    public MailService(MailConfig mailConfig, Mailer mailer) {
+    private final List<String> adminEmails;
+
+    public MailService(MailConfig mailConfig, Mailer mailer, UserService userService) {
         this.mailConfig = mailConfig;
         this.mailer = mailer;
+        this.userService = userService;
+        /// how to update if the admin list changes at runtime?
+        // refresh on every send email? seems pretty inefficient...
+        // maybe a scheduled task to refresh the list every hour?
+        this.adminEmails = userService.getAllAdmins().stream().map(User::getEmail).toList();
+    }
+
+    private void sendMail(Email email) {
+        try {
+            mailer.sendMail(email);
+        } catch (Exception e) {
+            log.error("Error sending mail: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 
     public void sendAccountRequestMail(String to) {
@@ -30,13 +51,18 @@ public class MailService {
                 .withPlainText("Your account request has been received. We will get back to you soon.")
                 .withHTMLText("<p>Your account request has been received. We will get back to you soon.</p>")
                 .buildEmail();
-        try {
-            mailer.sendMail(email);
-        } catch (Exception e) {
-            log.error("Error sending mail: " + e.getMessage());
-            e.printStackTrace();
+        sendMail(email);
+    }
 
-        }
+    public void sendAccountRequestMailToAdmin(User user) {
+        Email email = EmailBuilder.startingBlank()
+                .from("Feedpulse", mailConfig.getUserName())
+                .toMultiple(adminEmails)
+                .withSubject("New Account Request")
+                .withPlainText("A new account request has been received from " + user.getEmail())
+                .withHTMLText("<p>A new account request has been received from " + user.getEmail() + "</p>")
+                .buildEmail();
+        sendMail(email);
     }
 
 }

@@ -43,13 +43,15 @@ public class AuthService {
     private RoleRepository roleRepository;
     private ReferralCodeService referralCodeService;
     private PasswordEncoder passwordEncoder;
+    private MailService mailService;
 
-    public AuthService(JwtUtil jwtUtil, UserRepository userRepository, RoleRepository roleRepository, ReferralCodeService referralCodeService, PasswordEncoder passwordEncoder) {
+    public AuthService(JwtUtil jwtUtil, UserRepository userRepository, RoleRepository roleRepository, ReferralCodeService referralCodeService, PasswordEncoder passwordEncoder, MailService mailService) {
         this.jwtUtil = jwtUtil;
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
         this.referralCodeService = referralCodeService;
         this.passwordEncoder = passwordEncoder;
+        this.mailService = mailService;
     }
 
     public User createUser(Map<String, String> params) {
@@ -129,6 +131,7 @@ public class AuthService {
         user = userRepository.save(user);
         referralCodeService.invalidateReferralCode(rc, user);
 
-
+        mailService.sendAccountRequestMail(email);
+        mailService.sendAccountRequestMailToAdmin(user);
     }
 }

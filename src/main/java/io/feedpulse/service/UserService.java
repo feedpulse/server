@@ -115,6 +115,10 @@ public class UserService {
         );
     }
 
+    public List<User> getAllAdmins() {
+        return userRepository.findAllAdmins();
+    }
+
     public void saveUser(User user) {
         userRepository.save(user);
     }
