@@ -65,6 +65,8 @@ public class FeedController {
     @GetMapping(value = "/validate-feed-url", produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.OK)
     public void validateUrl(@RequestParam String feedUrl) {
+        // exception will be thrown if the url is not valid
+        // so see the response status code
         feedService.validateUrl(feedUrl);
     }
 }

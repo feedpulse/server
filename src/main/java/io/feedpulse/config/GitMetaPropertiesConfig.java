@@ -39,9 +39,9 @@ public class GitMetaPropertiesConfig {
         for (org.springframework.core.env.PropertySource<?> ps : env.getPropertySources()) {
             if (ps instanceof EnumerablePropertySource eps) {
                 if (eps.getName().contains("git.properties")) {
-                    logger.info("Git properties:");
+//                    logger.info("Git properties:");
                     for (String propName : eps.getPropertyNames()) {
-                        logger.info("{}: {}", propName, eps.getProperty(propName));
+//                        logger.info("{}: {}", propName, eps.getProperty(propName));
                     }
                 }
             }

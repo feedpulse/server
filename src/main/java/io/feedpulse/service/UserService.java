@@ -11,6 +11,8 @@ import io.feedpulse.repository.RoleRepository;
 import io.feedpulse.repository.UserRepository;
 import io.feedpulse.util.JwtUtil;
 import io.feedpulse.validation.EmailValidator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -25,6 +27,8 @@ import java.util.Optional;
 
 @Service
 public class UserService {
+
+    private static final Logger log = LoggerFactory.getLogger(UserService.class);
 
     @Autowired
     AuthenticationManager authenticationManager;
@@ -86,6 +90,8 @@ public class UserService {
     @NonNull
     public User getCurrentUser() throws UserNotFoundInDbException {
         SpringUserDetails userDetails = (SpringUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        log.info("ID: " + userDetails.getId());
+        log.info("email: " + userDetails.getEmail());
         return getUserById(userDetails.getId());
     }
 
@@ -116,7 +122,7 @@ public class UserService {
     }
 
     public List<User> getAllAdmins() {
-        return userRepository.findAllAdmins();
+        return userRepository.findAllByRole(io.feedpulse.model.enums.Role.ROLE_ADMIN);
     }
 
     public void saveUser(User user) {

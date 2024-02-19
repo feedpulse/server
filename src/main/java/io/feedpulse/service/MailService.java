@@ -2,6 +2,7 @@ package io.feedpulse.service;
 
 import io.feedpulse.config.MailConfig;
 import io.feedpulse.model.User;
+import jakarta.annotation.PostConstruct;
 import org.simplejavamail.api.email.Email;
 import org.simplejavamail.api.email.Recipient;
 import org.simplejavamail.api.mailer.Mailer;
@@ -20,14 +21,19 @@ public class MailService {
     private final MailConfig mailConfig;
 
     private final Mailer mailer;
+
     private final UserService userService;
 
-    private final List<String> adminEmails;
+    private List<String> adminEmails;
 
     public MailService(MailConfig mailConfig, Mailer mailer, UserService userService) {
         this.mailConfig = mailConfig;
         this.mailer = mailer;
         this.userService = userService;
+    }
+
+    @PostConstruct
+    public void postConstruct() {
         /// how to update if the admin list changes at runtime?
         // refresh on every send email? seems pretty inefficient...
         // maybe a scheduled task to refresh the list every hour?

@@ -6,13 +6,17 @@ import io.feedpulse.dto.response.PageableDTO;
 import io.feedpulse.exceptions.InvalidUuidException;
 import io.feedpulse.exceptions.NoSuchEntryException;
 import io.feedpulse.service.EntryService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.lang.NonNull;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/entries")
+@RequestMapping(path = "/entries", produces = "application/json")
 public class EntryController {
+
+    private static final Logger log = LoggerFactory.getLogger(EntryController.class);
 
     private final EntryService entryService;
 
@@ -27,6 +31,7 @@ public class EntryController {
             @RequestParam(defaultValue = "0") Integer page,
             @RequestParam(required = false, defaultValue = "true") Boolean sortOrder
     ) {
+        log.info("Getting entries with size: {}, page: {}, sortOrder: {}", size, page, sortOrder);
         return entryService.getFeedEntries(size, page, sortOrder);
     }
 

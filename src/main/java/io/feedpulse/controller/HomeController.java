@@ -9,7 +9,7 @@ public class HomeController {
 
     @RequestMapping(produces = "application/json")
     public String home() {
-        return "Hello World!";
+        return "{\"message\": \"Hello World!\"}";
     }
 
     @RequestMapping(produces = "text/html")

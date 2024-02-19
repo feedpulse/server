@@ -28,6 +28,15 @@ public class SearchController {
         return searchService.searchEntries(searchString, size, page, sortOrder);
     }
 
+    @RequestMapping("/feeds")
+    public PageableDTO<FeedDTO> searchFeeds(
+            @RequestParam() String searchString,
+            @RequestParam(defaultValue = "20") Integer size,
+            @RequestParam(defaultValue = "0") Integer page,
+            @RequestParam(required = false, defaultValue = "true") Boolean sortOrder) {
+        return searchService.searchFeeds(searchString, size, page, sortOrder);
+    }
+
     @RequestMapping("/feeds/{feedId}")
     public PageableDTO<EntryDTO> searchFeed(
             @PathVariable String feedId,
@@ -55,16 +64,5 @@ public class SearchController {
             @RequestParam(required = false, defaultValue = "true") Boolean sortOrder) {
         return searchService.searchFavoriteEntries(searchString, size, page, sortOrder);
     }
-
-
-    @RequestMapping("/feeds")
-    public PageableDTO<FeedDTO> feedsSearch(
-            @RequestParam() String searchString,
-            @RequestParam(defaultValue = "20") Integer size,
-            @RequestParam(defaultValue = "0") Integer page,
-            @RequestParam(required = false, defaultValue = "true") Boolean sortOrder) {
-        return searchService.searchFeeds(searchString, size, page, sortOrder);
-    }
-
 
 }
