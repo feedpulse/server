@@ -3,19 +3,33 @@ package io.feedpulse.service;
 import io.feedpulse.model.SpringUserDetails;
 import io.feedpulse.model.User;
 import io.feedpulse.repository.UserRepository;
+import io.feedpulse.util.JwtUtil;
+import io.jsonwebtoken.Claims;
 import jakarta.transaction.Transactional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
 @Service
 public class SpringUserDetailsService implements UserDetailsService {
 
-    UserRepository userRepository;
+    private static final Logger log = LoggerFactory.getLogger(SpringUserDetailsService.class);
 
-    public SpringUserDetailsService(UserRepository userRepository) {
+    private UserRepository userRepository;
+    private JwtUtil jwtUtil;
+
+    public SpringUserDetailsService(UserRepository userRepository, JwtUtil jwtUtil) {
         this.userRepository = userRepository;
+        this.jwtUtil = jwtUtil;
     }
 
     @Transactional
@@ -25,5 +39,18 @@ public class SpringUserDetailsService implements UserDetailsService {
                 .orElseThrow(() -> new UsernameNotFoundException("User Not Found with username: " + username));
 
         return SpringUserDetails.build(user);
+    }
+
+    public UserDetails loadUserByJwtToken(String jwtToken) {
+        String username = jwtUtil.extractUsername(jwtToken);
+        Function<Claims, List<SimpleGrantedAuthority>> extractAuthorities = claims -> {
+            List<LinkedHashMap> roles = (List<LinkedHashMap>) claims.get("roles");
+            return roles.stream()
+                    .map(roleMap -> new SimpleGrantedAuthority((String) roleMap.get("authority")))
+                    .collect(Collectors.toList());
+        };
+        List<SimpleGrantedAuthority> authorities = jwtUtil.extractClaim(jwtToken, extractAuthorities);
+        Long userId = jwtUtil.extractUserId(jwtToken);
+        return new SpringUserDetails(userId, username, "", true, false, authorities);
     }
 }

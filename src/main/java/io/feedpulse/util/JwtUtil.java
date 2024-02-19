@@ -61,7 +61,9 @@ public class JwtUtil {
     }
 
     public String generateToken(SpringUserDetails springUserDetails) {
-        Map<String, Object> claims = Collections.singletonMap("roles", springUserDetails.getAuthorities());
+        Map<String, Object> claims = new HashMap<>(Collections.singletonMap("roles", springUserDetails.getAuthorities()));
+        String encodedId = Base64.getEncoder().encodeToString(springUserDetails.getId().toString().getBytes());
+        claims.put("id", encodedId);
         return generateToken(springUserDetails.getUsername(), claims);
     }
 
@@ -91,6 +93,11 @@ public class JwtUtil {
             e.printStackTrace();
             return false;
         }
+    }
+
+    public Long extractUserId(String jwtToken) {
+        String id = extractClaim(jwtToken, claims -> claims.get("id", String.class));
+        return Long.parseLong(new String(Base64.getDecoder().decode(id)));
     }
 
     // Additional utility methods...
