@@ -33,6 +33,10 @@ jobs:
           DB_PASSWORD: ${{secrets.DB_PASSWORD}}
           DB_URL: ${{secrets.DB_URL}}
           JWT_SECRET: ${{secrets.JWT_SECRET}}
+          MAIL_USERNAME: ${{secrets.MAIL_USERNAME}}
+          MAIL_PASSWORD: ${{secrets.MAIL_PASSWORD}}
+          MAIL_PORT: ${{secrets.MAIL_PORT}}
+          MAIL_HOST: ${{secrets.MAIL_HOST}}
         run: |
           java --version
           javac --version
