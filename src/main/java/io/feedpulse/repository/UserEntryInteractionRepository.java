@@ -1,7 +1,6 @@
 package io.feedpulse.repository;
 
 import io.feedpulse.model.Entry;
-import io.feedpulse.model.User;
 import io.feedpulse.model.UserEntryInteraction;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -19,7 +18,7 @@ public interface UserEntryInteractionRepository extends JpaRepository<UserEntryI
     List<UserEntryInteraction> findByUserIdForEntries(Long userId, List<Entry> entries);
 
     @Modifying
-    @Query(value = "DELETE FROM UserEntryInteraction u WHERE u.user = :user AND u.entry.uuid IN :entryUuids")
-    void deleteByUserAndEntries(User user, List<UUID> entryUuids);
+    @Query(value = "DELETE FROM UserEntryInteraction u WHERE u.user.id = :userId AND u.entry.uuid IN :entryUuids")
+    void deleteByUserAndEntries(Long userId, List<UUID> entryUuids);
 
 }

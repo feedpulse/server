@@ -3,7 +3,9 @@ package io.feedpulse.controller;
 import io.feedpulse.dto.response.EntryDTO;
 import io.feedpulse.dto.response.FeedDTO;
 import io.feedpulse.dto.response.PageableDTO;
+import io.feedpulse.model.SpringUserDetails;
 import io.feedpulse.service.SearchService;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -24,8 +26,9 @@ public class SearchController {
             @RequestParam() String searchString,
             @RequestParam(defaultValue = "20") Integer size,
             @RequestParam(defaultValue = "0") Integer page,
-            @RequestParam(required = false, defaultValue = "true") Boolean sortOrder) {
-        return searchService.searchEntries(searchString, size, page, sortOrder);
+            @RequestParam(required = false, defaultValue = "true") Boolean sortOrder,
+            @AuthenticationPrincipal SpringUserDetails userDetails) {
+        return searchService.searchEntries(searchString, size, page, sortOrder, userDetails);
     }
 
     @RequestMapping("/feeds")
@@ -33,8 +36,9 @@ public class SearchController {
             @RequestParam() String searchString,
             @RequestParam(defaultValue = "20") Integer size,
             @RequestParam(defaultValue = "0") Integer page,
-            @RequestParam(required = false, defaultValue = "true") Boolean sortOrder) {
-        return searchService.searchFeeds(searchString, size, page, sortOrder);
+            @RequestParam(required = false, defaultValue = "true") Boolean sortOrder,
+            @AuthenticationPrincipal SpringUserDetails userDetails) {
+        return searchService.searchFeeds(searchString, size, page, sortOrder, userDetails);
     }
 
     @RequestMapping("/feeds/{feedId}")
@@ -43,8 +47,9 @@ public class SearchController {
             @RequestParam() String searchString,
             @RequestParam(defaultValue = "20") Integer size,
             @RequestParam(defaultValue = "0") Integer page,
-            @RequestParam(required = false, defaultValue = "true") Boolean sortOrder) {
-        return searchService.searchFeedEntries(feedId, searchString, size, page, sortOrder);
+            @RequestParam(required = false, defaultValue = "true") Boolean sortOrder,
+            @AuthenticationPrincipal SpringUserDetails userDetails) {
+        return searchService.searchFeedEntries(feedId, searchString, size, page, sortOrder, userDetails);
     }
 
     @RequestMapping("/bookmarks")
@@ -52,8 +57,9 @@ public class SearchController {
             @RequestParam() String searchString,
             @RequestParam(defaultValue = "20") Integer size,
             @RequestParam(defaultValue = "0") Integer page,
-            @RequestParam(required = false, defaultValue = "true") Boolean sortOrder) {
-        return searchService.searchBookmarkedEntries(searchString, size, page, sortOrder);
+            @RequestParam(required = false, defaultValue = "true") Boolean sortOrder,
+            @AuthenticationPrincipal SpringUserDetails userDetails) {
+        return searchService.searchBookmarkedEntries(searchString, size, page, sortOrder, userDetails);
     }
 
     @RequestMapping("/favorites")
@@ -61,8 +67,9 @@ public class SearchController {
             @RequestParam() String searchString,
             @RequestParam(defaultValue = "20") Integer size,
             @RequestParam(defaultValue = "0") Integer page,
-            @RequestParam(required = false, defaultValue = "true") Boolean sortOrder) {
-        return searchService.searchFavoriteEntries(searchString, size, page, sortOrder);
+            @RequestParam(required = false, defaultValue = "true") Boolean sortOrder,
+            @AuthenticationPrincipal SpringUserDetails userDetails) {
+        return searchService.searchFavoriteEntries(searchString, size, page, sortOrder, userDetails);
     }
 
 }

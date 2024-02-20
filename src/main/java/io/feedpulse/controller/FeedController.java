@@ -6,10 +6,12 @@ import io.feedpulse.dto.response.FeedDTO;
 import io.feedpulse.dto.response.PageableDTO;
 import io.feedpulse.exceptions.MalformedFeedException;
 import io.feedpulse.model.Feed;
+import io.feedpulse.model.SpringUserDetails;
 import io.feedpulse.service.EntryService;
 import io.feedpulse.service.FeedService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -30,15 +32,16 @@ public class FeedController {
     public PageableDTO<FeedDTO> getFeed(
             @RequestParam(defaultValue = "20") Integer size,
             @RequestParam(defaultValue = "0") Integer page,
-            @RequestParam(required = false, defaultValue = "true") Boolean sortOrder
+            @RequestParam(required = false, defaultValue = "true") Boolean sortOrder,
+            @AuthenticationPrincipal SpringUserDetails userDetails
     ) {
-        return feedService.getFeeds(size, page, sortOrder);
+        return feedService.getFeeds(size, page, sortOrder, userDetails);
     }
 
     @GetMapping(value = "/{uuid}", produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.OK)
-    public Feed getFeed(@PathVariable String uuid) {
-        return feedService.getFeed(uuid);
+    public Feed getFeed(@PathVariable String uuid, @AuthenticationPrincipal SpringUserDetails userDetails) {
+        return feedService.getFeed(uuid, userDetails);
     }
 
     @ResponseStatus(HttpStatus.OK)
@@ -46,20 +49,21 @@ public class FeedController {
     public PageableDTO<EntryDTO> getFeedEntries(@PathVariable String uuid,
                                                 @RequestParam(defaultValue = "20") Integer size,
                                                 @RequestParam(defaultValue = "0") Integer page,
-                                                @RequestParam(required = false, defaultValue = "true") Boolean sortOrder) {
-        return entryService.getFeedEntries(uuid, size, page, sortOrder);
+                                                @RequestParam(required = false, defaultValue = "true") Boolean sortOrder,
+                                                @AuthenticationPrincipal SpringUserDetails userDetails) {
+        return entryService.getFeedEntries(uuid, size, page, sortOrder,userDetails);
     }
 
     @PostMapping()
     @ResponseStatus(HttpStatus.CREATED)
-    public FeedDTO addFeed(@RequestParam String feedUrl) throws MalformedFeedException {
-        return feedService.addFeed(feedUrl);
+    public FeedDTO addFeed(@RequestParam String feedUrl, @AuthenticationPrincipal SpringUserDetails userDetails) throws MalformedFeedException {
+        return feedService.addFeed(feedUrl, userDetails);
     }
 
     @DeleteMapping("/{uuid}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deleteFeed(@PathVariable String uuid) {
-        feedService.deleteFeedForUser(uuid);
+    public void deleteFeed(@PathVariable String uuid, @AuthenticationPrincipal SpringUserDetails userDetails) {
+        feedService.deleteFeedForUser(uuid, userDetails);
     }
 
     @GetMapping(value = "/validate-feed-url", produces = MediaType.APPLICATION_JSON_VALUE)

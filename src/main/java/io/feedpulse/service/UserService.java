@@ -81,17 +81,11 @@ public class UserService {
         return updatedUser;
     }
 
-    public User updateUser(UserUpdateRequestDTO userUpdateRequestDTO) throws UserNotFoundInDbException, InvalidEmailException, WrongPasswordException {
-        User updatedUser = getCurrentUser();
-        updatedUser = updateUser(updatedUser.getId(), userUpdateRequestDTO);
-        return updatedUser;
+    public User updateUser(UserUpdateRequestDTO userUpdateRequestDTO, SpringUserDetails userDetails) throws UserNotFoundInDbException, InvalidEmailException, WrongPasswordException {
+        return updateUser(userDetails.getId(), userUpdateRequestDTO);
     }
 
-    @NonNull
-    public User getCurrentUser() throws UserNotFoundInDbException {
-        SpringUserDetails userDetails = (SpringUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        log.info("ID: " + userDetails.getId());
-        log.info("email: " + userDetails.getEmail());
+    public User getCurrentUserFromDb(SpringUserDetails userDetails) throws UserNotFoundInDbException {
         return getUserById(userDetails.getId());
     }
 

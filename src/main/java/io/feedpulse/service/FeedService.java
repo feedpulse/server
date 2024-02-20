@@ -6,10 +6,10 @@ import io.feedpulse.dto.response.FeedDTO;
 import io.feedpulse.dto.response.PageableDTO;
 import io.feedpulse.exceptions.*;
 import io.feedpulse.model.Feed;
+import io.feedpulse.model.SpringUserDetails;
 import io.feedpulse.model.User;
 import io.feedpulse.repository.FeedRepository;
 import io.feedpulse.util.UuidUtil;
-import jakarta.transaction.Transactional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -18,6 +18,7 @@ import org.springframework.data.web.PagedResourcesAssembler;
 import org.springframework.hateoas.EntityModel;
 import org.springframework.hateoas.PagedModel;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Objects;
@@ -29,16 +30,14 @@ public class FeedService {
 
     private final FeedRepository feedRepository;
     private final UserService userService;
-    private final EntryService entryService;
     private final FeedFetchService feedFetchService;
     private final UserEntryInteractionService userEntryInteractionService;
 
     private final PagedResourcesAssembler<Feed> pagedResourcesAssembler;
 
 
-    public FeedService(FeedRepository feedRepository, EntryService entryService, UserService userService, FeedFetchService feedFetchService, UserEntryInteractionService userEntryInteractionService, PagedResourcesAssembler<Feed> pagedResourcesAssembler) {
+    public FeedService(FeedRepository feedRepository, UserService userService, FeedFetchService feedFetchService, UserEntryInteractionService userEntryInteractionService, PagedResourcesAssembler<Feed> pagedResourcesAssembler) {
         this.feedRepository = feedRepository;
-        this.entryService = entryService;
         this.userService = userService;
         this.feedFetchService = feedFetchService;
         this.userEntryInteractionService = userEntryInteractionService;
@@ -51,31 +50,26 @@ public class FeedService {
     }
 
 
-    private PagedModel<EntityModel<Feed>> getFeedsAsPagedModel(Pageable pageRequest) {
-        User user = userService.getCurrentUser();
-        Page<Feed> feeds = feedRepository.findFeedsByUsersId(user.getId(), pageRequest);
+    public PageableDTO<FeedDTO> getFeeds(Integer size, Integer page, Boolean sortOrder, SpringUserDetails springUserDetails) {
+        Pageable pageRequest = createPageRequest(size, page, sortOrder);
+        Page<Feed> feeds = feedRepository.findFeedsByUsersId(springUserDetails.getId(), pageRequest);
         PagedModel<EntityModel<Feed>> pagedModel = pagedResourcesAssembler.toModel(feeds);
-        return pagedModel;
-    }
-
-    public PageableDTO<FeedDTO> getFeeds(Integer size, Integer page, Boolean sortOrder) {
-        PagedModel<EntityModel<Feed>> pagedModel = getFeedsAsPagedModel(createPageRequest(size, page, sortOrder));
         List<FeedDTO> feedDTOs = convertToFeedDTO(pagedModel);
         return PageableDTO.of(pagedModel, feedDTOs);
     }
 
-    public Feed getFeed(String uuidString) throws InvalidUuidException, NoSuchFeedException {
+    public Feed getFeed(String uuidString, SpringUserDetails userDetails) throws InvalidUuidException, NoSuchFeedException {
         UUID uuid = UuidUtil.fromString(uuidString);
-        User user = userService.getCurrentUser();
-        Optional<Feed> feed = feedRepository.findFeedByUuidAndUsersId(uuid, user.getId());
+        Optional<Feed> feed = feedRepository.findFeedByUuidAndUsersId(uuid, userDetails.getId());
         if (feed.isEmpty()) {
             throw new NoSuchFeedException(uuidString);
         }
         return feed.get();
     }
 
-    public FeedDTO addFeed(String feedUrl) throws MalformedFeedException {
-        User user = userService.getCurrentUser();
+    @Transactional(noRollbackFor = BaseException.class)
+    public FeedDTO addFeed(String feedUrl, SpringUserDetails userDetails) throws MalformedFeedException {
+        User user = userService.getUserById(userDetails.getId());
         Optional<Feed> existingFeed = feedRepository.findByFeedUrl(feedUrl);
         if (existingFeed.isPresent()) {
             // if the feed already exists, add it to the user's feeds
@@ -109,15 +103,15 @@ public class FeedService {
         return FeedDTO.of(feed);
     }
 
-    @Transactional
-    public void deleteFeedForUser(String uuid) {
-        User user = userService.getCurrentUser();
-        Optional<Feed> feed = feedRepository.findFeedByUuidAndUsersId(UuidUtil.fromString(uuid), user.getId());
+    @Transactional(noRollbackFor = BaseException.class)
+    public void deleteFeedForUser(String uuid, SpringUserDetails userDetails) {
+        User user = userService.getUserById(userDetails.getId());
+        Optional<Feed> feed = feedRepository.findFeedByUuidAndUsersId(UuidUtil.fromString(uuid), userDetails.getId());
         if (feed.isEmpty()) {
             throw new NoSuchFeedException(uuid);
         }
         // delete all user entry interactions for the feed
-        userEntryInteractionService.deleteAllUserEntryInteractionsForFeed(user, feed.get());
+        userEntryInteractionService.deleteAllUserEntryInteractionsForFeed(userDetails.getId(), feed.get());
         // remove the feed from the user's feeds
         user.getFeeds().remove(feed.get());
         userService.saveUser(user);
@@ -147,9 +141,9 @@ public class FeedService {
         feedFetchService.parsePageContent(syndFeed.getEntries().get(0));
     }
 
-    public PageableDTO<FeedDTO> searchFeeds(String searchString, Integer size, Integer page, Boolean sortOrder) {
+    public PageableDTO<FeedDTO> searchFeeds(String searchString, Integer size, Integer page, Boolean sortOrder, SpringUserDetails userDetails) {
         Pageable pageRequest = createPageRequest(size, page, sortOrder);
-        Page<Feed> feedList = feedRepository.searchFeedsByUserId(userService.getCurrentUser().getId(), searchString, pageRequest);
+        Page<Feed> feedList = feedRepository.searchFeedsByUserId(userDetails.getId(), searchString, pageRequest);
         PagedModel<EntityModel<Feed>> pagedModel = pagedResourcesAssembler.toModel(feedList);
         List<FeedDTO> feedDTOList = convertToFeedDTO(pagedModel);
         return PageableDTO.of(pagedModel, feedDTOList);

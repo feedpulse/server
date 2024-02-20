@@ -4,9 +4,11 @@ import io.feedpulse.dto.request.UserUpdateRequestDTO;
 import io.feedpulse.exceptions.InvalidEmailException;
 import io.feedpulse.exceptions.UserNotFoundInDbException;
 import io.feedpulse.exceptions.WrongPasswordException;
+import io.feedpulse.model.SpringUserDetails;
 import io.feedpulse.model.User;
 import io.feedpulse.service.UserService;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -20,13 +22,13 @@ public class UserController {
     }
 
     @GetMapping("/me")
-    public User getCurrentUser() {
-        return userService.getCurrentUser();
+    public User getCurrentUser(@AuthenticationPrincipal SpringUserDetails userDetails) {
+        return userService.getCurrentUserFromDb(userDetails);
     }
 
     @PostMapping("/me")
-    public User updateUser(@RequestBody UserUpdateRequestDTO userUpdateRequestDTO) throws UserNotFoundInDbException, InvalidEmailException, WrongPasswordException {
-        return userService.updateUser(userUpdateRequestDTO);
+    public User updateUser(@RequestBody UserUpdateRequestDTO userUpdateRequestDTO, @AuthenticationPrincipal SpringUserDetails userDetails) throws UserNotFoundInDbException, InvalidEmailException, WrongPasswordException {
+        return userService.updateUser(userUpdateRequestDTO, userDetails);
     }
 
     @GetMapping("/{id}")

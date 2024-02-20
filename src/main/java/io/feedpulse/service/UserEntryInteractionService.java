@@ -1,7 +1,6 @@
 package io.feedpulse.service;
 
 import io.feedpulse.model.Feed;
-import io.feedpulse.model.User;
 import io.feedpulse.repository.EntryRepository;
 import io.feedpulse.repository.UserEntryInteractionRepository;
 import org.springframework.stereotype.Service;
@@ -22,10 +21,10 @@ public class UserEntryInteractionService {
     }
 
     @Transactional
-    public void deleteAllUserEntryInteractionsForFeed(User user, Feed feed) {
+    public void deleteAllUserEntryInteractionsForFeed(Long userId, Feed feed) {
         List<UUID> entryUuids = entryRepository.findUuidsByFeedId(feed);
         if(!entryUuids.isEmpty()){
-            userEntryInteractionRepository.deleteByUserAndEntries(user, entryUuids);
+            userEntryInteractionRepository.deleteByUserAndEntries(userId, entryUuids);
         }
     }
 }
