@@ -8,11 +8,7 @@ import lombok.*;
 import java.io.Serial;
 import java.io.Serializable;
 
-@AllArgsConstructor
-@NoArgsConstructor
-@Getter
-@Setter
-@EqualsAndHashCode
+@Data
 @Entity
 public class UserEntryInteraction implements Serializable {
 
@@ -44,6 +40,8 @@ public class UserEntryInteraction implements Serializable {
     @Column(name = "is_read")
     private boolean read = false;
 
+
+    protected UserEntryInteraction() {}
 
     @Builder
     public UserEntryInteraction(User user, Entry entry) {

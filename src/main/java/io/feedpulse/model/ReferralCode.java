@@ -8,11 +8,7 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDate;
 
-@AllArgsConstructor
-@NoArgsConstructor
-@Getter
-@Setter
-@EqualsAndHashCode
+@Data
 @Entity
 public class ReferralCode implements Serializable {
 
@@ -40,6 +36,8 @@ public class ReferralCode implements Serializable {
     @Column(nullable = false)
     private boolean isUsed = false;
 
+
+    protected ReferralCode() {}
 
     @Builder
     public ReferralCode(String code, LocalDate dateExpired) {

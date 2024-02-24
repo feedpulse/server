@@ -13,11 +13,7 @@ import java.util.Date;
 import java.util.Set;
 import java.util.UUID;
 
-@AllArgsConstructor
-@NoArgsConstructor
-@Getter
-@Setter
-@EqualsAndHashCode
+@Data
 @Entity
 public class Entry implements Serializable {
 
@@ -72,6 +68,8 @@ public class Entry implements Serializable {
     @JsonBackReference
     @JoinTable(name = "entry_keyword", joinColumns = @JoinColumn(name = "entry_uuid"), inverseJoinColumns = @JoinColumn(name = "keyword_id"))
     private Set<Keyword> keywords = Set.of();
+
+    protected Entry() {}
 
     @Builder
     public Entry(@NonNull Feed feed, @NonNull String title, @Nullable String description, @Nullable String text, @NonNull String link, @Nullable String author, @Nullable String imageUrl, @Nullable String language, @Nullable Date pubDate, @NonNull Set<Keyword> keywords) {

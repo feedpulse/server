@@ -13,11 +13,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
-@AllArgsConstructor
-@NoArgsConstructor
-@Getter
-@Setter
-@EqualsAndHashCode
+@Data
 @Entity
 public class Feed implements Serializable {
 
@@ -56,6 +52,8 @@ public class Feed implements Serializable {
     @JsonIgnore
     @ManyToMany(mappedBy = "feeds") // it tells Hibernate that User is the owner of the relationship
     private List<User> users;
+
+    protected Feed() {}
 
     @Builder
     public Feed(@NonNull String feedUrl, @NonNull String title, @Nullable String description, @NonNull String link, @Nullable String author, @Nullable Date pubDate) {

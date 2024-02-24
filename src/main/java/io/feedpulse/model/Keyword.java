@@ -8,11 +8,7 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.util.Set;
 
-@AllArgsConstructor
-@NoArgsConstructor
-@Getter
-@Setter
-@EqualsAndHashCode
+@Data
 @Entity
 public class Keyword implements Serializable {
 
@@ -30,8 +26,9 @@ public class Keyword implements Serializable {
     @ManyToMany(mappedBy = "keywords")
     private Set<Entry> entry;
 
-    @Builder
+    protected Keyword() {}
 
+    @Builder
     public Keyword(String keyword) {
         this.keyword = keyword;
     }

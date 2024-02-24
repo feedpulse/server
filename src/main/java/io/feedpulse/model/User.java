@@ -13,11 +13,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-@AllArgsConstructor
-@NoArgsConstructor
-@Getter
-@Setter
-@EqualsAndHashCode
+@Data
 @Entity
 @Table(name = "users")
 public class User implements Serializable {
@@ -41,6 +37,12 @@ public class User implements Serializable {
     @Column(unique = true)
     private String email;
 
+    private LocalDate dateCreated = LocalDate.now();
+
+    private LocalDate dateUpdated = LocalDate.now();
+
+    private LocalDate dateLastLogin = LocalDate.now();
+
     private boolean isUserEnabled = false;
 
     private boolean isUserLocked = false;
@@ -60,6 +62,8 @@ public class User implements Serializable {
     @JsonManagedReference
     @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
     private List<UserEntryInteraction> userEntryInteractions = new ArrayList<>();
+
+    protected User() {}
 
     @Builder
     public User(@NonNull String username, @NonNull String password, @NonNull String email, Set<Role> roles) {

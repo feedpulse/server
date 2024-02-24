@@ -6,11 +6,7 @@ import lombok.*;
 import java.io.Serial;
 import java.io.Serializable;
 
-@AllArgsConstructor
-@NoArgsConstructor
-@Getter
-@Setter
-@EqualsAndHashCode
+@Data
 @Entity
 @Table(name = "roles")
 public class Role implements Serializable {
@@ -26,6 +22,7 @@ public class Role implements Serializable {
     @Column(length = 20)
     private io.feedpulse.model.enums.Role name;
 
+    protected Role() {}
 
     @Builder
     public Role(io.feedpulse.model.enums.Role name) {
