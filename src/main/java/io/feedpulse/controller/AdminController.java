@@ -1,5 +1,6 @@
 package io.feedpulse.controller;
 
+import io.feedpulse.dto.response.ReferralCodeDTO;
 import io.feedpulse.model.ReferralCode;
 import io.feedpulse.service.ReferralCodeService;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -22,13 +23,13 @@ public class AdminController {
 
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/generate-referral-code")
-    public ReferralCode generateReferralCode() {
+    public ReferralCodeDTO generateReferralCode() {
         return referralCodeService.createReferralCode();
     }
 
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/referral-codes")
-    public List<ReferralCode> getReferralCodes() {
-        return referralCodeService.getReferralCodes();
+    public List<ReferralCodeDTO> getUnusedReferralCodes() {
+        return referralCodeService.getUnusedReferralCodes();
     }
 }

@@ -9,6 +9,7 @@ import org.simplejavamail.api.mailer.Mailer;
 import org.simplejavamail.email.EmailBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -26,7 +27,7 @@ public class MailService {
 
     private List<String> adminEmails;
 
-    public MailService(MailConfig mailConfig, Mailer mailer, UserService userService) {
+    public MailService(MailConfig mailConfig, Mailer mailer, @Lazy UserService userService) {
         this.mailConfig = mailConfig;
         this.mailer = mailer;
         this.userService = userService;
@@ -71,4 +72,14 @@ public class MailService {
         sendMail(email);
     }
 
+    public void sendAccountRequestSuccessfulMail() {
+        Email email = EmailBuilder.startingBlank()
+                .from("Feedpulse", mailConfig.getUserName())
+                .toMultiple(adminEmails)
+                .withSubject("Account Request Processed")
+                .withPlainText("Your account request has been approved. You can now login.")
+                .withHTMLText("<p>Your account request has been approved. You can now login.</p>")
+                .buildEmail();
+        sendMail(email);
+    }
 }

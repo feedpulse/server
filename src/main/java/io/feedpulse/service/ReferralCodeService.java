@@ -1,5 +1,6 @@
 package io.feedpulse.service;
 
+import io.feedpulse.dto.response.ReferralCodeDTO;
 import io.feedpulse.model.ReferralCode;
 import io.feedpulse.model.User;
 import io.feedpulse.repository.ReferralCodeRepository;
@@ -29,7 +30,7 @@ public class ReferralCodeService {
         return referralCode.isPresent() && !referralCode.get().isUsed() && referralCode.get().getDateExpired().isAfter(LocalDate.now());
     }
 
-    public ReferralCode createReferralCode() {
+    public ReferralCodeDTO createReferralCode() {
         String code;
         ReferralCode referralCode;
 
@@ -38,7 +39,8 @@ public class ReferralCodeService {
             referralCode = new ReferralCode(code, LocalDate.now().plusDays(7));
         } while (findByCode(code).isPresent());
 
-        return referralCodeRepository.save(referralCode);
+        referralCode = referralCodeRepository.save(referralCode);
+        return ReferralCodeDTO.of(referralCode);
     }
 
     public void invalidateReferralCode(ReferralCode referralCode, User usedBy) {
@@ -48,7 +50,10 @@ public class ReferralCodeService {
         referralCodeRepository.save(referralCode);
     }
 
-    public List<ReferralCode> getReferralCodes() {
-        return referralCodeRepository.findAll();
+    public List<ReferralCodeDTO> getUnusedReferralCodes() {
+        // find all referral codes whic are not used
+        return referralCodeRepository.findByIsUsedIsTrue().stream()
+                .map(ReferralCodeDTO::of)
+                .toList();
     }
 }

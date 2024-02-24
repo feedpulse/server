@@ -12,15 +12,17 @@ public class UserUpdateRequestDTO implements Serializable {
     private Optional<String> password = Optional.empty();
     private Optional<String> newPassword = Optional.empty();
     private Optional<List<Role>> roles = Optional.empty();
+    private Optional<Boolean> isUserEnabled = Optional.empty();
 
     public UserUpdateRequestDTO() {
     }
 
-    public UserUpdateRequestDTO(String email, String password, String newPassword, List<Role> roles) {
+    public UserUpdateRequestDTO(String email, String password, String newPassword, List<Role> roles, Boolean isUserEnabled) {
         this.email = Optional.ofNullable(email);
         this.password = Optional.ofNullable(password);
         this.newPassword = Optional.ofNullable(newPassword);
         this.roles = Optional.ofNullable(roles);
+        this.isUserEnabled = Optional.ofNullable(isUserEnabled);
     }
 
     public Optional<String> getEmail() {
@@ -55,6 +57,14 @@ public class UserUpdateRequestDTO implements Serializable {
         this.newPassword = Optional.ofNullable(newPassword);
     }
 
+    public Optional<Boolean> getIsUserEnabled() {
+        return isUserEnabled;
+    }
+
+    public void setIsUserEnabled(Boolean isUserEnabled) {
+        this.isUserEnabled = Optional.ofNullable(isUserEnabled);
+    }
+
     @Override
     public String toString() {
         //TODO: remove password from toString method before production
@@ -63,6 +73,7 @@ public class UserUpdateRequestDTO implements Serializable {
                 ", password=" + password +
                 ", newPassword=" + newPassword +
                 ", roles=" + roles +
+                ", isUserEnabled=" + isUserEnabled +
                 '}';
     }
 }

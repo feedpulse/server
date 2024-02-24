@@ -2,9 +2,11 @@ package io.feedpulse.repository;
 
 import io.feedpulse.model.User;
 import io.feedpulse.model.enums.Role;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Optional;
@@ -18,4 +20,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     @Query("SELECT u FROM User u JOIN u.roles r WHERE r.name = :role")
     List<User> findAllByRole(Role role);
+
+    Page<User> findAll(Specification<User> spec, Pageable pageable);
 }

@@ -1,12 +1,19 @@
 package io.feedpulse.controller;
 
 import io.feedpulse.dto.request.UserUpdateRequestDTO;
+import io.feedpulse.dto.response.PageableDTO;
+import io.feedpulse.dto.response.SimpleUserDTO;
 import io.feedpulse.exceptions.InvalidEmailException;
 import io.feedpulse.exceptions.UserNotFoundInDbException;
 import io.feedpulse.exceptions.WrongPasswordException;
 import io.feedpulse.model.SpringUserDetails;
 import io.feedpulse.model.User;
+import io.feedpulse.service.EntryService;
 import io.feedpulse.service.UserService;
+import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -15,10 +22,29 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/users")
 public class UserController {
 
+    private static final Logger log = LoggerFactory.getLogger(UserController.class);
+
     private final UserService userService;
 
     public UserController(UserService userService) {
         this.userService = userService;
+    }
+
+    @GetMapping()
+    @PreAuthorize("hasRole('ADMIN')")
+    public PageableDTO<SimpleUserDTO> getUsers(Pageable pageable) {
+        return userService.getUsers(pageable);
+    }
+
+
+    @GetMapping("/filtered")
+    @PreAuthorize("hasRole('ADMIN')")
+    public PageableDTO<SimpleUserDTO> getUsersWithFilter(Pageable pageable,
+                                                         @RequestParam(required = false) String email,
+                                                         @RequestParam(required = false) Boolean isEnabled) {
+        log.info("Getting users with filter: email={}, isEnabled={}", email, isEnabled);
+
+        return userService.getUsersWithFilter(pageable, email, isEnabled);
     }
 
     @GetMapping("/me")
@@ -51,6 +77,12 @@ public class UserController {
     @PreAuthorize("hasRole('ADMIN')")
     public User updateUser(@PathVariable Long id, @RequestBody UserUpdateRequestDTO userUpdateRequestDTO) throws UserNotFoundInDbException, InvalidEmailException, WrongPasswordException {
         return userService.updateUser(id, userUpdateRequestDTO);
+    }
+
+    @PostMapping("/{id}/enable")
+    @PreAuthorize("hasRole('ADMIN')")
+    public User enableUser(@PathVariable Long id, @RequestParam Boolean enable) throws UserNotFoundInDbException {
+        return userService.enableUser(id, enable);
     }
 
 
