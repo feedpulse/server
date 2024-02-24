@@ -2,12 +2,22 @@ package io.feedpulse.model;
 
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
+import lombok.*;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.Set;
 
+@AllArgsConstructor
+@NoArgsConstructor
+@Getter
+@Setter
+@EqualsAndHashCode
 @Entity
 public class Keyword implements Serializable {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -20,31 +30,15 @@ public class Keyword implements Serializable {
     @ManyToMany(mappedBy = "keywords")
     private Set<Entry> entry;
 
-    public Keyword() {
-    }
+    @Builder
 
     public Keyword(String keyword) {
         this.keyword = keyword;
     }
 
+    @Builder
     public Keyword(String keyword, Set<Entry> entry) {
         this.keyword = keyword;
-        this.entry = entry;
-    }
-
-    public String getKeyword() {
-        return keyword;
-    }
-
-    public void setKeyword(String keyword) {
-        this.keyword = keyword;
-    }
-
-    public Set<Entry> getEntry() {
-        return entry;
-    }
-
-    public void setEntry(Set<Entry> entry) {
         this.entry = entry;
     }
 

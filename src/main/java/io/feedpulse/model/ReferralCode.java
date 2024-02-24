@@ -1,17 +1,23 @@
 package io.feedpulse.model;
 
 import jakarta.persistence.*;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 import org.springframework.lang.Nullable;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDate;
+
+@AllArgsConstructor
+@NoArgsConstructor
 @Getter
 @Setter
+@EqualsAndHashCode
 @Entity
 public class ReferralCode implements Serializable {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -34,9 +40,8 @@ public class ReferralCode implements Serializable {
     @Column(nullable = false)
     private boolean isUsed = false;
 
-    protected ReferralCode() {
-    }
 
+    @Builder
     public ReferralCode(String code, LocalDate dateExpired) {
         this.code = code;
         this.dateCreated = LocalDate.now();

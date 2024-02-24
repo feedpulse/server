@@ -3,11 +3,21 @@ package io.feedpulse.model;
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
+import lombok.*;
 
+import java.io.Serial;
 import java.io.Serializable;
 
+@AllArgsConstructor
+@NoArgsConstructor
+@Getter
+@Setter
+@EqualsAndHashCode
 @Entity
 public class UserEntryInteraction implements Serializable {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
 
     @JsonIgnore
     @Id
@@ -26,75 +36,27 @@ public class UserEntryInteraction implements Serializable {
     private Entry entry;
 
     @Column(name = "is_bookmark")
-    private Boolean bookmark = false;
+    private boolean bookmark = false;
 
     @Column(name = "is_favorite")
-    private Boolean favorite = false;
+    private boolean favorite = false;
 
-    @Column(name = "is_read") // Renamed from `read` to `is_read`
-    private Boolean read = false;
+    @Column(name = "is_read")
+    private boolean read = false;
 
-    public UserEntryInteraction() {
-    }
 
+    @Builder
     public UserEntryInteraction(User user, Entry entry) {
         this.user = user;
         this.entry = entry;
     }
 
+    @Builder
     public UserEntryInteraction(User user, Entry entry, boolean read, boolean favorite, boolean bookmark) {
         this.user = user;
         this.entry = entry;
         this.read = read;
         this.favorite = favorite;
-        this.bookmark = bookmark;
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public User getUser() {
-        return user;
-    }
-
-    public void setUser(User user) {
-        this.user = user;
-    }
-
-    public Entry getEntry() {
-        return entry;
-    }
-
-    public void setEntry(Entry entry) {
-        this.entry = entry;
-    }
-
-    public boolean isRead() {
-        return read;
-    }
-
-    public void setRead(boolean read) {
-        this.read = read;
-    }
-
-    public boolean isFavorite() {
-        return favorite;
-    }
-
-    public void setFavorite(boolean favorite) {
-        this.favorite = favorite;
-    }
-
-    public boolean isBookmark() {
-        return bookmark;
-    }
-
-    public void setBookmark(boolean bookmark) {
         this.bookmark = bookmark;
     }
 

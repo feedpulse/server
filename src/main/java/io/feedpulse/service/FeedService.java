@@ -32,7 +32,6 @@ public class FeedService {
     private final UserService userService;
     private final FeedFetchService feedFetchService;
     private final UserEntryInteractionService userEntryInteractionService;
-
     private final PagedResourcesAssembler<Feed> pagedResourcesAssembler;
 
 
@@ -81,21 +80,21 @@ public class FeedService {
             return FeedDTO.of(existingFeed.get());
         }
 
-        Feed.FeedBuilder feedBuilder = new Feed.FeedBuilder();
+        Feed.FeedBuilder feedBuilder = Feed.builder();
         try {
             SyndFeed syndFeed = feedFetchService.fetchFeed(feedUrl);
             feedBuilder
-                    .setTitle(syndFeed.getTitle())
-                    .setDescription(syndFeed.getDescription())
-                    .setLink(syndFeed.getLink())
-                    .setAuthor(syndFeed.getAuthor())
-                    .setPubDate(syndFeed.getPublishedDate());
+                    .title(syndFeed.getTitle())
+                    .description(syndFeed.getDescription())
+                    .link(syndFeed.getLink())
+                    .author(syndFeed.getAuthor())
+                    .pubDate(syndFeed.getPublishedDate());
         } catch (Exception e) {
             e.printStackTrace();
 //            throw new MalformedFeedException(feedUrl);
         }
-        feedBuilder.setFeedUrl(feedUrl);
-        Feed feed = feedBuilder.createFeed();
+        feedBuilder.feedUrl(feedUrl);
+        Feed feed = feedBuilder.build();
         feed = feedRepository.save(feed);
         user.getFeeds().add(feed);
         userService.saveUser(user);

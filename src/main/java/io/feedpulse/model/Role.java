@@ -1,13 +1,21 @@
 package io.feedpulse.model;
 
 import jakarta.persistence.*;
+import lombok.*;
 
+import java.io.Serial;
 import java.io.Serializable;
 
+@AllArgsConstructor
+@NoArgsConstructor
+@Getter
+@Setter
+@EqualsAndHashCode
 @Entity
 @Table(name = "roles")
 public class Role implements Serializable {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     @Id
@@ -18,26 +26,9 @@ public class Role implements Serializable {
     @Column(length = 20)
     private io.feedpulse.model.enums.Role name;
 
-    public Role() {
-    }
 
+    @Builder
     public Role(io.feedpulse.model.enums.Role name) {
-        this.name = name;
-    }
-
-    public Integer getId() {
-        return id;
-    }
-
-    public void setId(Integer id) {
-        this.id = id;
-    }
-
-    public io.feedpulse.model.enums.Role getName() {
-        return name;
-    }
-
-    public void setName(io.feedpulse.model.enums.Role name) {
         this.name = name;
     }
 

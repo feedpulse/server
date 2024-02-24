@@ -48,27 +48,28 @@ public class EntryService {
         Optional<Entry> existingEntry = getEntryByLink(syndEntry.getLink());
         if (existingEntry.isPresent()) return; // TODO: maybe update entry
 
-        Entry.EntryBuilder entryBuilder = new Entry.EntryBuilder();
+        Entry.EntryBuilder entryBuilder = Entry.builder();
         entryBuilder
-                .setTitle(syndEntry.getTitle())
-                .setDescription(data.getDescription())
-                .setText(data.getText())
-                .setLink(syndEntry.getLink())
-                .setAuthor(syndEntry.getAuthor())
-                .setImageUrl(data.getImage())
-                .setLanguage(data.getLanguage())
-                .setKeywords(keywords)
-                .setFeed(feed);
+                .title(syndEntry.getTitle())
+                .description(data.getDescription())
+                .text(data.getText())
+                .link(syndEntry.getLink())
+                .author(syndEntry.getAuthor())
+                .imageUrl(data.getImage())
+                .language(data.getLanguage())
+                .keywords(keywords)
+                .feed(feed);
         if (syndEntry.getPublishedDate() == null) {
-            entryBuilder.setPubDate(new Date());
+            entryBuilder.pubDate(new Date());
         } else {
-            entryBuilder.setPubDate(syndEntry.getPublishedDate());
+            entryBuilder.pubDate(syndEntry.getPublishedDate());
         }
 
+        Entry newEntry = entryRepository.save(entryBuilder.build());
         try {
-            Entry newEntry = entryRepository.save(entryBuilder.createEntry());
+            newEntry = entryRepository.save(newEntry);
         } catch (Exception e) {
-            log.warn("Failed to save entry: {}", entryBuilder.createEntry());
+            log.warn("Failed to save entry: {}", newEntry);
             e.printStackTrace();
         }
 
