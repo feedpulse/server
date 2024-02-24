@@ -1,6 +1,7 @@
-package io.feedpulse.exceptions;
+package io.feedpulse.exceptions.parsing;
 
 import com.rometools.rome.io.FeedException;
+import io.feedpulse.exceptions.BaseException;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
@@ -8,8 +9,8 @@ import org.springframework.web.bind.annotation.ResponseStatus;
  * Exception thrown by WireFeedInput, WireFeedOutput, WireFeedParser and WireFeedGenerator instances if they can not parse or generate a feed.
  */
 @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-public class RomeFeedParseException extends BaseException {
-    public RomeFeedParseException(FeedException e) {
+public class FeedNotParsableException extends BaseException {
+    public FeedNotParsableException(FeedException e) {
         super(
                 HttpStatus.INTERNAL_SERVER_ERROR.value(),
                 "Cannot parse feed",

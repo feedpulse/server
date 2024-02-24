@@ -1,6 +1,6 @@
 package io.feedpulse.security.jwt;
 
-import io.feedpulse.exceptions.NoJwtTokenFoundException;
+import io.feedpulse.exceptions.auth.JwtTokenNotFoundException;
 import io.feedpulse.service.SpringUserDetailsService;
 import io.feedpulse.util.JwtUtil;
 import jakarta.servlet.FilterChain;
@@ -55,7 +55,7 @@ public class AuthTokenFilter extends OncePerRequestFilter {
     }
 
     @Nullable
-    private String parseJwt(HttpServletRequest request) throws NoJwtTokenFoundException {
+    private String parseJwt(HttpServletRequest request) throws JwtTokenNotFoundException {
         String headerAuth = request.getHeader("Authorization");
         if (headerAuth == null) return null;
 

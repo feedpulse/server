@@ -9,7 +9,7 @@ public class BaseException extends RuntimeException {
 
     private final Date timestamp = new Date();
     private final int status;
-    private String message;
+    private final String message;
     private String details;
     private String remedy;
 

@@ -3,14 +3,10 @@ package io.feedpulse.controller;
 import io.feedpulse.dto.request.UserUpdateRequestDTO;
 import io.feedpulse.dto.response.PageableDTO;
 import io.feedpulse.dto.response.SimpleUserDTO;
-import io.feedpulse.exceptions.InvalidEmailException;
-import io.feedpulse.exceptions.UserNotFoundInDbException;
-import io.feedpulse.exceptions.WrongPasswordException;
+import io.feedpulse.exceptions.entity.UserNotFoundException;
 import io.feedpulse.model.SpringUserDetails;
 import io.feedpulse.model.User;
-import io.feedpulse.service.EntryService;
 import io.feedpulse.service.UserService;
-import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Pageable;
@@ -53,13 +49,13 @@ public class UserController {
     }
 
     @PostMapping("/me")
-    public User updateUser(@RequestBody UserUpdateRequestDTO userUpdateRequestDTO, @AuthenticationPrincipal SpringUserDetails userDetails) throws UserNotFoundInDbException, InvalidEmailException, WrongPasswordException {
+    public User updateUser(@RequestBody UserUpdateRequestDTO userUpdateRequestDTO, @AuthenticationPrincipal SpringUserDetails userDetails) {
         return userService.updateUser(userUpdateRequestDTO, userDetails);
     }
 
     @GetMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public User getUserById(@PathVariable Long id) throws UserNotFoundInDbException {
+    public User getUserById(@PathVariable Long id) throws UserNotFoundException {
         return userService.getUserById(id);
     }
 
@@ -69,19 +65,19 @@ public class UserController {
      */
     @GetMapping("/0")
     @PreAuthorize("hasRole('ADMIN')")
-    public User getUserById(@RequestParam String email) throws UserNotFoundInDbException {
+    public User getUserById(@RequestParam String email) throws UserNotFoundException {
         return userService.getUserByEmail(email);
     }
 
     @PostMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public User updateUser(@PathVariable Long id, @RequestBody UserUpdateRequestDTO userUpdateRequestDTO) throws UserNotFoundInDbException, InvalidEmailException, WrongPasswordException {
+    public User updateUser(@PathVariable Long id, @RequestBody UserUpdateRequestDTO userUpdateRequestDTO) {
         return userService.updateUser(id, userUpdateRequestDTO);
     }
 
     @PostMapping("/{id}/enable")
     @PreAuthorize("hasRole('ADMIN')")
-    public User enableUser(@PathVariable Long id, @RequestParam Boolean enable) throws UserNotFoundInDbException {
+    public User enableUser(@PathVariable Long id, @RequestParam Boolean enable) throws UserNotFoundException {
         return userService.enableUser(id, enable);
     }
 

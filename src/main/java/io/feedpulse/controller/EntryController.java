@@ -3,8 +3,6 @@ package io.feedpulse.controller;
 import io.feedpulse.dto.request.EntryInteractionUpdateDTO;
 import io.feedpulse.dto.response.EntryDTO;
 import io.feedpulse.dto.response.PageableDTO;
-import io.feedpulse.exceptions.InvalidUuidException;
-import io.feedpulse.exceptions.NoSuchEntryException;
 import io.feedpulse.model.SpringUserDetails;
 import io.feedpulse.service.EntryService;
 import org.slf4j.Logger;
@@ -40,13 +38,13 @@ public class EntryController {
 
     @ResponseStatus(HttpStatus.OK)
     @GetMapping("/{uuid}")
-    public EntryDTO getEntry(@PathVariable String uuid, @AuthenticationPrincipal SpringUserDetails springUserDetails) throws InvalidUuidException, NoSuchEntryException {
+    public EntryDTO getEntry(@PathVariable String uuid, @AuthenticationPrincipal SpringUserDetails springUserDetails) {
         return entryService.getEntry(uuid, springUserDetails);
     }
 
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @RequestMapping(value = "/{uuid}", method = {RequestMethod.PATCH, RequestMethod.PUT})
-    public void updateEntry(@PathVariable String uuid, @RequestBody EntryInteractionUpdateDTO entry, @AuthenticationPrincipal SpringUserDetails springUserDetails) throws InvalidUuidException, NoSuchEntryException {
+    public void updateEntry(@PathVariable String uuid, @RequestBody EntryInteractionUpdateDTO entry, @AuthenticationPrincipal SpringUserDetails springUserDetails) {
         entryService.updateEntry(uuid, entry.isRead(), entry.isFavorite(), entry.isBookmark(), springUserDetails);
     }
 

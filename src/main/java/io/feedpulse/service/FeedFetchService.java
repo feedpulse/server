@@ -5,9 +5,9 @@ import com.rometools.rome.feed.synd.SyndEntry;
 import com.rometools.rome.feed.synd.SyndFeed;
 import com.rometools.rome.io.FeedException;
 import com.rometools.rome.io.SyndFeedInput;
-import io.feedpulse.exceptions.FetchException;
-import io.feedpulse.exceptions.HtmlNotParsableException;
-import io.feedpulse.exceptions.RomeFeedParseException;
+import io.feedpulse.exceptions.parsing.FeedNotParsableException;
+import io.feedpulse.exceptions.parsing.FetchFailedException;
+import io.feedpulse.exceptions.parsing.HtmlNotParsableException;
 import io.feedpulse.model.Feed;
 import io.feedpulse.model.Keyword;
 import io.feedpulse.repository.FeedRepository;
@@ -69,21 +69,21 @@ public class FeedFetchService {
      *
      * @param feedUrl The URL of the feed to fetch.
      * @return The fetched SyndFeed object.
-     * @throws FetchException       If an error occurs while fetching the feed content.
-     * @throws FeedException       If an error occurs while parsing the feed content.
+     * @throws FetchFailedException     If an error occurs while fetching the feed content.
+     * @throws FeedException            If an error occurs while parsing the feed content.
      * @throws IllegalArgumentException If the feed URL is invalid.
-     * @throws FetchException       If an error occurs while fetching the feed content.
+     * @throws FetchFailedException     If an error occurs while fetching the feed content.
      */
-    public SyndFeed fetchFeed(String feedUrl) throws RomeFeedParseException, IllegalArgumentException, FetchException {
+    public SyndFeed fetchFeed(String feedUrl) throws FeedNotParsableException, IllegalArgumentException, FetchFailedException {
         URI uri = FetchUtil.isValidUrlOrNull(feedUrl);
         if (uri == null) {
-            throw new FetchException(feedUrl);
+            throw new FetchFailedException(feedUrl);
         }
         Reader reader = FetchUtil.fetchAsReader(uri);
         try {
             return new SyndFeedInput().build(reader);
         } catch (FeedException e) {
-            throw new RomeFeedParseException(e);
+            throw new FeedNotParsableException(e);
         }
     }
 
@@ -98,7 +98,7 @@ public class FeedFetchService {
             SyndFeed syndFeed = new SyndFeedInput().build(reader);
             processEntries(syndFeed.getEntries(), feed);
 
-        } catch (FetchException | FeedException | HtmlNotParsableException | IOException e) {
+        } catch (FetchFailedException | FeedException | HtmlNotParsableException | IOException e) {
             // TODO: handle exception
             log.error("Error while fetching feed: {}", feed.getFeedUrl());
         }
@@ -109,12 +109,12 @@ public class FeedFetchService {
      *
      * @param feed The feed for which to obtain the reader.
      * @return A reader object for the feed content.
-     * @throws FetchException If an error occurs while fetching the feed content.
+     * @throws FetchFailedException If an error occurs while fetching the feed content.
      */
-    private Reader obtainReaderForFeed(Feed feed) throws FetchException {
+    private Reader obtainReaderForFeed(Feed feed) throws FetchFailedException {
         URI uri = FetchUtil.isValidUrlOrNull(feed.getFeedUrl());
         if (uri == null) {
-            throw new FetchException(feed.getFeedUrl());
+            throw new FetchFailedException(feed.getFeedUrl());
         }
         return FetchUtil.fetchAsReader(uri);
     }
@@ -123,7 +123,7 @@ public class FeedFetchService {
      * Processes the list of SyndEntry objects by calling the parseSyndEntry method for each entry.
      *
      * @param entries The list of SyndEntry objects to be processed.
-     * @param feed The Feed object associated with the entries.
+     * @param feed    The Feed object associated with the entries.
      * @throws HtmlNotParsableException If there is an error while parsing the HTML content of an entry.
      */
     private void processEntries(List<SyndEntry> entries, Feed feed) throws HtmlNotParsableException {
@@ -170,7 +170,7 @@ public class FeedFetchService {
             URI uri = FetchUtil.isValidUrlOrNull(syndEntry.getLink());
             if (uri == null) throw new HtmlNotParsableException(syndEntry.getLink());
             html = FetchUtil.fetchAsText(uri);
-        } catch (IOException | FetchException e) {
+        } catch (IOException | FetchFailedException e) {
             throw new HtmlNotParsableException(syndEntry.getLink());
         }
         return Essence.extract(html);

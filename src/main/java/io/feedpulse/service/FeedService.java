@@ -4,12 +4,15 @@ package io.feedpulse.service;
 import com.rometools.rome.feed.synd.SyndFeed;
 import io.feedpulse.dto.response.FeedDTO;
 import io.feedpulse.dto.response.PageableDTO;
-import io.feedpulse.exceptions.*;
+import io.feedpulse.exceptions.BaseException;
+import io.feedpulse.exceptions.common.InvalidUuidException;
+import io.feedpulse.exceptions.entity.FeedNotFoundException;
+import io.feedpulse.exceptions.parsing.MissingFeedEntriesException;
 import io.feedpulse.model.Feed;
 import io.feedpulse.model.SpringUserDetails;
 import io.feedpulse.model.User;
 import io.feedpulse.repository.FeedRepository;
-import io.feedpulse.util.UuidUtil;
+import io.feedpulse.validation.UuidValidator;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -57,17 +60,18 @@ public class FeedService {
         return PageableDTO.of(pagedModel, feedDTOs);
     }
 
-    public Feed getFeed(String uuidString, SpringUserDetails userDetails) throws InvalidUuidException, NoSuchFeedException {
-        UUID uuid = UuidUtil.fromString(uuidString);
+    public Feed getFeed(String uuidString, SpringUserDetails userDetails) {
+        if (!UuidValidator.isValid(uuidString)) throw new InvalidUuidException(uuidString);
+        UUID uuid = UUID.fromString(uuidString);
         Optional<Feed> feed = feedRepository.findFeedByUuidAndUsersId(uuid, userDetails.getId());
         if (feed.isEmpty()) {
-            throw new NoSuchFeedException(uuidString);
+            throw new FeedNotFoundException(uuidString);
         }
         return feed.get();
     }
 
     @Transactional(noRollbackFor = BaseException.class)
-    public FeedDTO addFeed(String feedUrl, SpringUserDetails userDetails) throws MalformedFeedException {
+    public FeedDTO addFeed(String feedUrl, SpringUserDetails userDetails) {
         User user = userService.getUserById(userDetails.getId());
         Optional<Feed> existingFeed = feedRepository.findByFeedUrl(feedUrl);
         if (existingFeed.isPresent()) {
@@ -105,9 +109,10 @@ public class FeedService {
     @Transactional(noRollbackFor = BaseException.class)
     public void deleteFeedForUser(String uuid, SpringUserDetails userDetails) {
         User user = userService.getUserById(userDetails.getId());
-        Optional<Feed> feed = feedRepository.findFeedByUuidAndUsersId(UuidUtil.fromString(uuid), userDetails.getId());
+        if (!UuidValidator.isValid(uuid)) throw new InvalidUuidException(uuid);
+        Optional<Feed> feed = feedRepository.findFeedByUuidAndUsersId(UUID.fromString(uuid), userDetails.getId());
         if (feed.isEmpty()) {
-            throw new NoSuchFeedException(uuid);
+            throw new FeedNotFoundException(uuid);
         }
         // delete all user entry interactions for the feed
         userEntryInteractionService.deleteAllUserEntryInteractionsForFeed(userDetails.getId(), feed.get());
@@ -128,14 +133,11 @@ public class FeedService {
      * Validates a given feed URL.
      *
      * @param feedUrl The URL of the feed to be validated.
-     * @throws RomeFeedParseException If an error occurs while parsing or generating the feed.
-     * @throws NoFeedEntriesFoundException If no feed entries are found.
-     * @throws HtmlNotParsableException If there is an error while parsing the HTML content of the feed entry.
      */
-    public void validateUrl(String feedUrl) throws RomeFeedParseException, NoFeedEntriesFoundException, HtmlNotParsableException {
-        SyndFeed syndFeed= feedFetchService.fetchFeed(feedUrl);
+    public void validateUrl(String feedUrl) {
+        SyndFeed syndFeed = feedFetchService.fetchFeed(feedUrl);
         if (syndFeed.getEntries().isEmpty()) {
-            throw new NoFeedEntriesFoundException(feedUrl);
+            throw new MissingFeedEntriesException(feedUrl);
         }
         feedFetchService.parsePageContent(syndFeed.getEntries().get(0));
     }

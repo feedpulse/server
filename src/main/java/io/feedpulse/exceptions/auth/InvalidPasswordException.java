@@ -1,16 +1,17 @@
-package io.feedpulse.exceptions;
+package io.feedpulse.exceptions.auth;
 
+import io.feedpulse.exceptions.BaseException;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
 @ResponseStatus(value = HttpStatus.BAD_REQUEST)
-public class WrongPasswordException extends BaseException {
+public class InvalidPasswordException extends BaseException {
 
-    public WrongPasswordException() {
+    public InvalidPasswordException() {
         super(
                 HttpStatus.BAD_REQUEST.value(),
-                "Wrong password",
-                "Check if the password is correct and try again.",
+                "Invalid password",
+                "The password you entered is invalid.",
                 "Check if the password is correct and try again."
         );
     }

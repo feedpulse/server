@@ -1,11 +1,11 @@
 package io.feedpulse.service;
 
+import com.sanctionco.jmail.InvalidEmailException;
 import io.feedpulse.dto.request.UserUpdateRequestDTO;
 import io.feedpulse.dto.response.PageableDTO;
 import io.feedpulse.dto.response.SimpleUserDTO;
-import io.feedpulse.exceptions.InvalidEmailException;
-import io.feedpulse.exceptions.UserNotFoundInDbException;
-import io.feedpulse.exceptions.WrongPasswordException;
+import io.feedpulse.exceptions.auth.InvalidPasswordException;
+import io.feedpulse.exceptions.entity.UserNotFoundException;
 import io.feedpulse.model.Role;
 import io.feedpulse.model.SpringUserDetails;
 import io.feedpulse.model.User;
@@ -15,6 +15,7 @@ import io.feedpulse.specification.SearchCriteria;
 import io.feedpulse.specification.UserSpecification;
 import io.feedpulse.util.JwtUtil;
 import io.feedpulse.validation.EmailValidator;
+import io.feedpulse.validation.PasswordValidator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -60,14 +61,12 @@ public class UserService {
         this.mailService = mailService;
     }
 
-    public User updateUser(Long id, UserUpdateRequestDTO userUpdateRequestDTO) throws UserNotFoundInDbException, InvalidEmailException, WrongPasswordException {
+    public User updateUser(Long id, UserUpdateRequestDTO userUpdateRequestDTO) {
         User updatedUser = getUserById(id);
 
         String email = userUpdateRequestDTO.getEmail().orElse(null);
         if (email != null) {
-            if (!EmailValidator.isValid(email)) {
-                throw new InvalidEmailException();
-            }
+            if (!EmailValidator.isValid(email)) throw new InvalidEmailException();
             updatedUser.setEmail(email);
             updatedUser.setUsername(email);
         }
@@ -75,9 +74,8 @@ public class UserService {
         String password = userUpdateRequestDTO.getPassword().orElse(null);
         String newPassword = userUpdateRequestDTO.getNewPassword().orElse(null);
         if (password != null && newPassword != null) {
-            if (!passwordEncoder.matches(password, updatedUser.getPassword())) {
-                throw new WrongPasswordException();
-            }
+            if (!PasswordValidator.isValid(newPassword)) throw new InvalidPasswordException();
+            if (!passwordEncoder.matches(password, updatedUser.getPassword())) throw new InvalidPasswordException();
             updatedUser.setPassword(passwordEncoder.encode(newPassword));
         }
 
@@ -99,11 +97,11 @@ public class UserService {
         return updatedUser;
     }
 
-    public User updateUser(UserUpdateRequestDTO userUpdateRequestDTO, SpringUserDetails userDetails) throws UserNotFoundInDbException, InvalidEmailException, WrongPasswordException {
+    public User updateUser(UserUpdateRequestDTO userUpdateRequestDTO, SpringUserDetails userDetails) {
         return updateUser(userDetails.getId(), userUpdateRequestDTO);
     }
 
-    public User enableUser(Long id, Boolean enable) throws UserNotFoundInDbException {
+    public User enableUser(Long id, Boolean enable) throws UserNotFoundException {
         if (enable == null) {
             throw new IllegalArgumentException("Enable parameter cannot be null");
         }
@@ -117,33 +115,33 @@ public class UserService {
         return user;
     }
 
-    public User getCurrentUserFromDb(SpringUserDetails userDetails) throws UserNotFoundInDbException {
+    public User getCurrentUserFromDb(SpringUserDetails userDetails) {
         return getUserById(userDetails.getId());
     }
 
     @NonNull
-    public User getUserByToken(String token) throws UserNotFoundInDbException {
+    public User getUserByToken(String token) throws UserNotFoundException {
         String username = jwtUtil.extractUsername(token);
         return getUserByUsername(username);
     }
 
     @NonNull
-    public User getUserById(Long id) throws UserNotFoundInDbException {
+    public User getUserById(Long id) throws UserNotFoundException {
         return userRepository.findById(id).orElseThrow(
-                () -> new UserNotFoundInDbException("ID")
+                () -> new UserNotFoundException("ID", id.toString())
         );
     }
 
     @NonNull
-    public User getUserByEmail(String email) throws UserNotFoundInDbException {
+    public User getUserByEmail(String email) throws UserNotFoundException {
         return userRepository.findByEmail(email).orElseThrow(
-                () -> new UserNotFoundInDbException("Email"));
+                () -> new UserNotFoundException("Email", email));
     }
 
     @NonNull
-    public User getUserByUsername(String username) throws UserNotFoundInDbException {
+    public User getUserByUsername(String username) throws UserNotFoundException {
         return userRepository.findByUsername(username).orElseThrow(
-                () -> new UserNotFoundInDbException("Username")
+                () -> new UserNotFoundException("Username", username)
         );
     }
 

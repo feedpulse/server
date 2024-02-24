@@ -1,6 +1,6 @@
 package io.feedpulse.security.jwt;
 
-import io.feedpulse.exceptions.NotAuthenticatedException;
+import io.feedpulse.exceptions.auth.NotAuthenticatedException;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;

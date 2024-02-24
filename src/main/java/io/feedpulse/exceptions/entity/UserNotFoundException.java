@@ -1,14 +1,15 @@
-package io.feedpulse.exceptions;
+package io.feedpulse.exceptions.entity;
 
+import io.feedpulse.exceptions.BaseException;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
 @ResponseStatus(HttpStatus.NOT_FOUND)
-public class UserNotFoundInDbException extends BaseException{
-    public UserNotFoundInDbException(String findBy) {
+public class UserNotFoundException extends BaseException {
+    public UserNotFoundException(String findBy, String value) {
         super(
                 HttpStatus.NOT_FOUND.value(),
-                "User not found in db by [" + findBy + "]",
+                "User not found in db by [" + findBy + " = " + value + "]",
                 "Check if the user exists in the db and try again.",
                 "Check if the user exists in the db and try again."
         );

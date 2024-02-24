@@ -3,12 +3,12 @@ package io.feedpulse.service;
 import com.rometools.rome.feed.synd.SyndEntry;
 import io.feedpulse.dto.response.EntryDTO;
 import io.feedpulse.dto.response.PageableDTO;
-import io.feedpulse.exceptions.InvalidUuidException;
-import io.feedpulse.exceptions.NoSuchEntryException;
+import io.feedpulse.exceptions.common.InvalidUuidException;
+import io.feedpulse.exceptions.entity.EntryNotFoundException;
 import io.feedpulse.model.*;
 import io.feedpulse.repository.EntryRepository;
 import io.feedpulse.repository.UserEntryInteractionRepository;
-import io.feedpulse.util.UuidUtil;
+import io.feedpulse.validation.UuidValidator;
 import io.github.cdimascio.essence.EssenceResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -79,8 +79,9 @@ public class EntryService {
         entryRepository.delete(entry);
     }
 
-    public PageableDTO<EntryDTO> getFeedEntries(String feedUuidString, Integer size, Integer page, Boolean sortOrder, SpringUserDetails userDetails) throws InvalidUuidException {
-        UUID feedUuid = UuidUtil.fromString(feedUuidString);
+    public PageableDTO<EntryDTO> getFeedEntries(String feedUuidString, Integer size, Integer page, Boolean sortOrder, SpringUserDetails userDetails) {
+        if (!UuidValidator.isValid(feedUuidString)) throw new InvalidUuidException(feedUuidString);
+        UUID feedUuid = UUID.fromString(feedUuidString);
         Pageable pageRequest = createPageRequest(size, page, sortOrder);
         Page<Entry> pageOfEntries = entryRepository.findEntriesByFeedUuidAndUsersId(feedUuid, userDetails.getId(), pageRequest);
         PagedModel<EntityModel<Entry>> pagedModel = pagedResourcesAssembler.toModel(pageOfEntries);
@@ -96,21 +97,22 @@ public class EntryService {
         return PageableDTO.of(pagedModel, entryDTOs);
     }
 
-    private @NonNull Entry getEntryFromDB(@Nullable String uuidString, SpringUserDetails springUserDetails) throws InvalidUuidException, NoSuchEntryException {
-        UUID uuid = UuidUtil.fromString(uuidString);
+    private @NonNull Entry getEntryFromDB(@Nullable String uuidString, SpringUserDetails springUserDetails) {
+        if (!UuidValidator.isValid(uuidString)) throw new InvalidUuidException(uuidString);
+        UUID uuid = UUID.fromString(uuidString);
         Optional<Entry> entry = entryRepository.findEntryByUuidAndUsersId(uuid, springUserDetails.getId());
         if (entry.isEmpty()) {
-            throw new NoSuchEntryException("No entry found with UUID " + uuidString);
+            throw new EntryNotFoundException(uuidString);
         }
         return entry.get();
     }
 
-    public @NonNull EntryDTO getEntry(@Nullable String uuidString, SpringUserDetails springUserDetails) throws InvalidUuidException, NoSuchEntryException {
+    public @NonNull EntryDTO getEntry(@Nullable String uuidString, SpringUserDetails springUserDetails) {
         Entry entry = getEntryFromDB(uuidString, springUserDetails);
         UserEntryInteraction userEntryInteraction = userEntryInteractionRepository
-                .findByUserIdAndEntryUuid(springUserDetails.getId(), UuidUtil.fromString(uuidString))
+                .findByUserIdAndEntryUuid(springUserDetails.getId(), UUID.fromString(uuidString))
                 .orElse(null);
-        return EntryDTO.of( entry, userEntryInteraction);
+        return EntryDTO.of(entry, userEntryInteraction);
     }
 
 
@@ -122,7 +124,7 @@ public class EntryService {
         return entryRepository.findByLink(link);
     }
 
-    public void updateEntry(String entryUuid, @Nullable Boolean read, @Nullable Boolean favorite, @Nullable Boolean bookmark, SpringUserDetails springUserDetails) throws InvalidUuidException, NoSuchEntryException {
+    public void updateEntry(String entryUuid, @Nullable Boolean read, @Nullable Boolean favorite, @Nullable Boolean bookmark, SpringUserDetails springUserDetails) {
         User user = userService.getUserById(springUserDetails.getId());
         Entry entry = getEntryFromDB(entryUuid, springUserDetails);
         UserEntryInteraction userEntryInteraction = userEntryInteractionRepository
@@ -176,7 +178,8 @@ public class EntryService {
     }
 
     public PageableDTO<EntryDTO> searchFeedEntries(String feedId, String searchString, Integer size, Integer page, Boolean sortOrder, SpringUserDetails userDetails) {
-        UUID feedUuid = UuidUtil.fromString(feedId);
+        if (!UuidValidator.isValid(feedId)) throw new InvalidUuidException(feedId);
+        UUID feedUuid = UUID.fromString(feedId);
         Pageable pageRequest = createPageRequest(size, page, sortOrder);
         Page<Entry> entryList = entryRepository.searchEntriesByFeedUuidAndUsersId(feedUuid, userDetails.getId(), searchString, pageRequest);
         PagedModel<EntityModel<Entry>> pagedModel = pagedResourcesAssembler.toModel(entryList);

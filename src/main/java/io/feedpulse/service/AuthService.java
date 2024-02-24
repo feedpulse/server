@@ -1,9 +1,12 @@
 package io.feedpulse.service;
 
+import com.sanctionco.jmail.InvalidEmailException;
 import io.feedpulse.dto.request.AccountRequestDTO;
-import io.feedpulse.exceptions.InvalidCredentialsException;
-import io.feedpulse.exceptions.InvalidEmailException;
-import io.feedpulse.exceptions.WrongPasswordException;
+import io.feedpulse.exceptions.auth.*;
+import io.feedpulse.exceptions.entity.*;
+import io.feedpulse.exceptions.entity.InvalidReferralCodeException;
+import io.feedpulse.exceptions.entity.ReferralCodeNotFoundException;
+import io.feedpulse.exceptions.entity.RoleNotFoundException;
 import io.feedpulse.model.ReferralCode;
 import io.feedpulse.model.Role;
 import io.feedpulse.model.User;
@@ -11,10 +14,13 @@ import io.feedpulse.repository.RoleRepository;
 import io.feedpulse.repository.UserRepository;
 import io.feedpulse.util.JwtUtil;
 import io.feedpulse.validation.EmailValidator;
+import io.feedpulse.validation.PasswordValidator;
+import io.feedpulse.validation.UuidValidator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.lang.NonNull;
+import org.springframework.lang.Nullable;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.LockedException;
@@ -25,7 +31,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -56,30 +61,35 @@ public class AuthService {
 
     public User createUser(Map<String, String> params) {
         String email = params.getOrDefault("email", null);
-        if (email == null) throw new InvalidEmailException();
-
-        String username = email; //params.getOrDefault("username", null);
-        if (username == null) throw new IllegalArgumentException("Username is required");
-
         String password = params.getOrDefault("password", null);
-        if (password == null) throw new IllegalArgumentException("Password is required");
+        validateNewUser(email, email, password);
 
-        return createUser(email, username, password);
+        return createUser(email, email, password);
+    }
+
+    private void validateNewUser(@Nullable String email, @Nullable String username, @Nullable String password){
+        validateExistingUser(email, username, password);
+
+        // database checks at last to avoid unnecessary checks with the database (in case the previous checks fail)
+        if (userRepository.findByEmail(email).isPresent()) {
+            throw new EmailConflictException(email);
+        }
+    }
+
+    private void validateExistingUser(@Nullable String email, @Nullable String username, @Nullable String password) {
+        if (email == null) throw new MissingEmailException();
+        if (!EmailValidator.isValid(email)) throw new InvalidEmailException();
+
+        if (username == null) throw new MissingUsernameException();
+
+        if (password == null) throw new MissingPasswordException();
+        if (!PasswordValidator.isValid(password)) throw new InvalidPasswordException();
     }
 
 
-    public User createUser(@NonNull String email, @NonNull String username, @NonNull String password) {
-        if (userRepository.findByEmail(email).isPresent()) {
-            throw new IllegalArgumentException("Email already exists");
-        }
-        if (userRepository.findByUsername(username).isPresent()) {
-            throw new IllegalArgumentException("Username already exists");
-        }
-
+    private User createUser(@NonNull String email, @NonNull String username, @NonNull String password) {
         password = passwordEncoder.encode(password);
-        Role role = roleRepository.findByName(io.feedpulse.model.enums.Role.ROLE_USER).orElseThrow(
-                () -> new RuntimeException("Role not found")
-        );
+        Role role = roleRepository.findByName(io.feedpulse.model.enums.Role.ROLE_USER).orElseThrow(RoleNotFoundException::new);
         Set<Role> roles = new HashSet<>();
         roles.add(role);
         User user = new User(username, password, email, roles);
@@ -88,10 +98,8 @@ public class AuthService {
 
     public String loginUser(Map<String, String> params) {
         String email = params.getOrDefault("email", null);
-        if (email == null || email.isBlank() || !EmailValidator.isValid(email)) throw new InvalidEmailException();
-
         String password = params.getOrDefault("password", null);
-        if (password == null || password.isBlank()) throw new WrongPasswordException();
+        validateExistingUser(email, email, password);
 
         return loginUser(email, password);
     }
@@ -107,12 +115,11 @@ public class AuthService {
              */
             authentication = authenticationManager.authenticate(authenticationToken);
         } catch (DisabledException e) {
-            throw new DisabledException("User is disabled");
+            throw new UserNotEnabledException(email);
         } catch (LockedException e) {
-            throw new LockedException("User is locked");
+            throw new UserLockedException(email);
         } catch (AuthenticationException e) {
-            e.printStackTrace();
-            throw new InvalidCredentialsException();
+            throw new AuthenticationFailedException();
         }
         SecurityContextHolder.getContext().setAuthentication(authentication);
         return jwtUtil.generateToken(authentication);
@@ -120,15 +127,18 @@ public class AuthService {
 
 
     public void requestAccount(AccountRequestDTO accountRequestDTO) {
-        String email = accountRequestDTO.getEmail().orElseThrow(() -> new IllegalArgumentException("Email is required"));
-        String password = accountRequestDTO.getPassword().orElseThrow(() -> new IllegalArgumentException("Password is required"));
-        String referralCode = accountRequestDTO.getReferralCode().orElseThrow(() -> new IllegalArgumentException("Referral code is required"));
-        // handle referral code
-        ReferralCode rc = referralCodeService.findByCode(referralCode).orElseThrow(() -> new IllegalArgumentException("Invalid referral code"));
+        String email = accountRequestDTO.getEmail().orElse(null);
+        String password = accountRequestDTO.getPassword().orElse(null);
+        validateNewUser(email, email, password);
+
+        String referralCode = accountRequestDTO.getReferralCode().orElseThrow(MissingReferralCodeException::new);
+        if (!UuidValidator.isValid(referralCode)) throw new InvalidReferralCodeException(referralCode);
+        ReferralCode rc = referralCodeService.findByCode(referralCode).orElseThrow(() -> new ReferralCodeNotFoundException(referralCode));
 
         User user = createUser(email, email, password);
         user.setUserEnabled(false);
         user = userRepository.save(user);
+
         referralCodeService.invalidateReferralCode(rc, user);
 
         mailService.sendAccountRequestMail(email);

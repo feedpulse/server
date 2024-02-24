@@ -1,5 +1,6 @@
-package io.feedpulse.exceptions;
+package io.feedpulse.exceptions.auth;
 
+import io.feedpulse.exceptions.BaseException;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
@@ -10,8 +11,8 @@ public class NotAuthenticatedException extends BaseException {
         super(
                 HttpStatus.UNAUTHORIZED.value(),
                 "Not authenticated",
-                "Please authenticate and try again.",
-                "Please authenticate and try again."
+                "The user is not authenticated.",
+                "Please login and try again."
         );
     }
 

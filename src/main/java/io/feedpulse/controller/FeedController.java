@@ -4,7 +4,6 @@ package io.feedpulse.controller;
 import io.feedpulse.dto.response.EntryDTO;
 import io.feedpulse.dto.response.FeedDTO;
 import io.feedpulse.dto.response.PageableDTO;
-import io.feedpulse.exceptions.MalformedFeedException;
 import io.feedpulse.model.Feed;
 import io.feedpulse.model.SpringUserDetails;
 import io.feedpulse.service.EntryService;
@@ -51,12 +50,12 @@ public class FeedController {
                                                 @RequestParam(defaultValue = "0") Integer page,
                                                 @RequestParam(required = false, defaultValue = "true") Boolean sortOrder,
                                                 @AuthenticationPrincipal SpringUserDetails userDetails) {
-        return entryService.getFeedEntries(uuid, size, page, sortOrder,userDetails);
+        return entryService.getFeedEntries(uuid, size, page, sortOrder, userDetails);
     }
 
     @PostMapping()
     @ResponseStatus(HttpStatus.CREATED)
-    public FeedDTO addFeed(@RequestParam String feedUrl, @AuthenticationPrincipal SpringUserDetails userDetails) throws MalformedFeedException {
+    public FeedDTO addFeed(@RequestParam String feedUrl, @AuthenticationPrincipal SpringUserDetails userDetails) {
         return feedService.addFeed(feedUrl, userDetails);
     }
 

@@ -1,6 +1,8 @@
 package io.feedpulse.exceptions;
 
 import io.feedpulse.dto.response.ExceptionResponse;
+import io.feedpulse.exceptions.auth.NotAuthenticatedException;
+import io.feedpulse.exceptions.common.InvalidRequestBodyException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -44,7 +46,7 @@ public class ResponseEntityExceptionHandlerAdvice {
      */
     @ExceptionHandler({HttpMessageNotReadableException.class})
     public ResponseEntity<ExceptionResponse> handleHttpMessageNotReadableException(HttpMessageNotReadableException ex) {
-        BaseException e =  new InvalidRequestBodyException();
+        BaseException e = new InvalidRequestBodyException();
         log.error("HttpMessageNotReadableException: ", ex);
         return new ResponseEntity<>(ExceptionResponse.fromException(e), HttpStatus.valueOf(e.getStatus()));
     }

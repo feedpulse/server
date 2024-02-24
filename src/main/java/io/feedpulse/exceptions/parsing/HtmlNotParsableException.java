@@ -1,5 +1,6 @@
-package io.feedpulse.exceptions;
+package io.feedpulse.exceptions.parsing;
 
+import io.feedpulse.exceptions.BaseException;
 import org.springframework.http.HttpStatus;
 
 /**
