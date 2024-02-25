@@ -11,6 +11,7 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 @Data
@@ -77,6 +78,13 @@ public class Feed implements Serializable {
                 ", author='" + author + '\'' +
                 ", pubDate=" + pubDate +
                 '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Feed)) return false;
+        return Objects.equals(uuid, ((Feed) o).uuid) && Objects.equals(feedUrl, ((Feed) o).feedUrl) && Objects.equals(entries, ((Feed) o).entries) && Objects.equals(title, ((Feed) o).title) && Objects.equals(description, ((Feed) o).description) && Objects.equals(link, ((Feed) o).link) && Objects.equals(author, ((Feed) o).author) && Objects.equals(pubDate, ((Feed) o).pubDate);
     }
 
 }

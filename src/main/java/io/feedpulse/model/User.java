@@ -94,4 +94,11 @@ public class User implements Serializable {
                 ", feeds='" + feeds + '\'' +
                 '}';
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof User user)) return false;
+        return id.equals(user.id);
+    }
 }

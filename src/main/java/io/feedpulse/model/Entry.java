@@ -10,6 +10,7 @@ import org.springframework.lang.Nullable;
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.Date;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
@@ -100,5 +101,12 @@ public class Entry implements Serializable {
                 ", pubDate=" + pubDate +
                 ", keywords=" + keywords +
                 '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Entry entry)) return false;
+        return Objects.equals(uuid, entry.uuid) && Objects.equals(feed, entry.feed) && Objects.equals(title, entry.title) && Objects.equals(description, entry.description) && Objects.equals(text, entry.text) && Objects.equals(link, entry.link) && Objects.equals(author, entry.author) && Objects.equals(imageUrl, entry.imageUrl) && Objects.equals(language, entry.language) && Objects.equals(pubDate, entry.pubDate) && Objects.equals(keywords, entry.keywords);
     }
 }
