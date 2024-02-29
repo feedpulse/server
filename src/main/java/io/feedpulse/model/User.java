@@ -37,10 +37,16 @@ public class User implements Serializable {
     @Column(unique = true)
     private String email;
 
+    @NonNull
+    @Column(nullable = false)
     private LocalDate dateCreated = LocalDate.now();
 
+    @NonNull
+    @Column(nullable = false)
     private LocalDate dateUpdated = LocalDate.now();
 
+    @NonNull
+    @Column(nullable = false)
     private LocalDate dateLastLogin = LocalDate.now();
 
     private boolean isUserEnabled = false;

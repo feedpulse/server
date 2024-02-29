@@ -31,6 +31,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -93,6 +94,7 @@ public class UserService {
         if (isUserEnabled != null) {
             updatedUser.setUserEnabled(isUserEnabled);
         }
+        updatedUser.setDateUpdated(LocalDate.now());
         updatedUser = userRepository.save(updatedUser);
         return updatedUser;
     }

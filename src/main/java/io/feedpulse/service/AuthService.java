@@ -31,6 +31,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -114,6 +115,7 @@ public class AuthService {
              * This will call the loadUserByUsername method in SpringUserDetailsService to get the user details
              */
             authentication = authenticationManager.authenticate(authenticationToken);
+            updateTimestamps(userRepository.findByEmail(email).get());
         } catch (DisabledException e) {
             throw new UserNotEnabledException(email);
         } catch (LockedException e) {
@@ -123,6 +125,11 @@ public class AuthService {
         }
         SecurityContextHolder.getContext().setAuthentication(authentication);
         return jwtUtil.generateToken(authentication);
+    }
+
+    private User updateTimestamps(@NonNull User user) {
+        user.setDateLastLogin(LocalDate.now());
+        return userRepository.save(user);
     }
 
 
