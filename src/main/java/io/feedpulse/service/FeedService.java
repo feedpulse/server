@@ -52,8 +52,7 @@ public class FeedService {
     }
 
 
-    public PageableDTO<FeedDTO> getFeeds(Integer size, Integer page, Boolean sortOrder, SpringUserDetails springUserDetails) {
-        Pageable pageRequest = createPageRequest(size, page, sortOrder);
+    public PageableDTO<FeedDTO> getFeeds(Pageable pageRequest, SpringUserDetails springUserDetails) {
         Page<Feed> feeds = feedRepository.findFeedsByUsersUuid(springUserDetails.getUuid(), pageRequest);
         PagedModel<EntityModel<Feed>> pagedModel = pagedResourcesAssembler.toModel(feeds);
         List<FeedDTO> feedDTOs = convertToFeedDTO(pagedModel);
@@ -142,18 +141,11 @@ public class FeedService {
         feedFetchService.parsePageContent(syndFeed.getEntries().get(0));
     }
 
-    public PageableDTO<FeedDTO> searchFeeds(String searchString, Integer size, Integer page, Boolean sortOrder, SpringUserDetails userDetails) {
-        Pageable pageRequest = createPageRequest(size, page, sortOrder);
+    public PageableDTO<FeedDTO> searchFeeds(String searchString, Pageable pageRequest, SpringUserDetails userDetails) {
         Page<Feed> feedList = feedRepository.searchFeedsByUserUuid(userDetails.getUuid(), searchString, pageRequest);
         PagedModel<EntityModel<Feed>> pagedModel = pagedResourcesAssembler.toModel(feedList);
         List<FeedDTO> feedDTOList = convertToFeedDTO(pagedModel);
         return PageableDTO.of(pagedModel, feedDTOList);
-    }
-
-    private Pageable createPageRequest(Integer size, Integer page, Boolean sortOrder) {
-        var by = Sort.by("pubDate");
-        var sort = sortOrder ? by.ascending() : by.descending();
-        return PageRequest.of(page, size, sort);
     }
 
     private List<FeedDTO> convertToFeedDTO(PagedModel<EntityModel<Feed>> pagedModel) {

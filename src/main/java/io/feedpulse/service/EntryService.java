@@ -79,18 +79,16 @@ public class EntryService {
         entryRepository.delete(entry);
     }
 
-    public PageableDTO<EntryDTO> getFeedEntries(String feedUuidString, Integer size, Integer page, Boolean sortOrder, SpringUserDetails userDetails) {
+    public PageableDTO<EntryDTO> getFeedEntries(String feedUuidString, Pageable pageRequest, SpringUserDetails userDetails) {
         if (!UuidValidator.isValid(feedUuidString)) throw new InvalidUuidException(feedUuidString);
         UUID feedUuid = UUID.fromString(feedUuidString);
-        Pageable pageRequest = createPageRequest(size, page, sortOrder);
         Page<Entry> pageOfEntries = entryRepository.findEntriesByFeedUuidAndUsersUuid(feedUuid, userDetails.getUuid(), pageRequest);
         PagedModel<EntityModel<Entry>> pagedModel = pagedResourcesAssembler.toModel(pageOfEntries);
         List<EntryDTO> entryDTOs = convertToEntryDTOs(pagedModel, userDetails);
         return PageableDTO.of(pagedModel, entryDTOs);
     }
 
-    public PageableDTO<EntryDTO> getFeedEntries(Integer size, Integer page, Boolean sortOrder, SpringUserDetails userDetails) {
-        Pageable pageRequest = createPageRequest(size, page, sortOrder);
+    public PageableDTO<EntryDTO> getFeedEntries(Pageable pageRequest, SpringUserDetails userDetails) {
         Page<Entry> entryList = entryRepository.findEntriesByUsersUuid(userDetails.getUuid(), pageRequest);
         PagedModel<EntityModel<Entry>> pagedModel = pagedResourcesAssembler.toModel(entryList);
         List<EntryDTO> entryDTOs = convertToEntryDTOs(pagedModel, userDetails);
@@ -153,60 +151,48 @@ public class EntryService {
         entryRepository.save(entry);
     }
 
-    public PageableDTO<EntryDTO> getFavoriteEntries(Integer size, Integer page, Boolean sortOrder, SpringUserDetails userDetails) {
-        Pageable pageRequest = createPageRequest(size, page, sortOrder);
+    public PageableDTO<EntryDTO> getFavoriteEntries(Pageable pageRequest, SpringUserDetails userDetails) {
         Page<Entry> entryList = entryRepository.findFavoriteEntriesByUsersUuid(userDetails.getUuid(), pageRequest);
         PagedModel<EntityModel<Entry>> pagedModel = pagedResourcesAssembler.toModel(entryList);
         List<EntryDTO> entryListDTO = convertToEntryDTOs(pagedModel, userDetails);
         return PageableDTO.of(pagedModel, entryListDTO);
     }
 
-    public PageableDTO<EntryDTO> getBookmarkedEntries(Integer size, Integer page, Boolean sortOrder, SpringUserDetails userDetails) {
-        Pageable pageRequest = createPageRequest(size, page, sortOrder);
+    public PageableDTO<EntryDTO> getBookmarkedEntries(Pageable pageRequest, SpringUserDetails userDetails) {
         Page<Entry> entryList = entryRepository.findBookmarkedEntriesByUsersUuid(userDetails.getUuid(), pageRequest);
         PagedModel<EntityModel<Entry>> pagedModel = pagedResourcesAssembler.toModel(entryList);
         List<EntryDTO> entryListDTO = convertToEntryDTOs(pagedModel, userDetails);
         return PageableDTO.of(pagedModel, entryListDTO);
     }
 
-    public PageableDTO<EntryDTO> searchEntries(String searchString, Integer size, Integer page, Boolean sortOrder, SpringUserDetails userDetails) {
-        Pageable pageRequest = createPageRequest(size, page, sortOrder);
+    public PageableDTO<EntryDTO> searchEntries(String searchString, Pageable pageRequest, SpringUserDetails userDetails) {
         Page<Entry> entryList = entryRepository.searchEntriesByUsersUuid(userDetails.getUuid(), searchString, pageRequest);
         PagedModel<EntityModel<Entry>> pagedModel = pagedResourcesAssembler.toModel(entryList);
         List<EntryDTO> entryListDTO = convertToEntryDTOs(pagedModel, userDetails);
         return PageableDTO.of(pagedModel, entryListDTO);
     }
 
-    public PageableDTO<EntryDTO> searchFeedEntries(String feedId, String searchString, Integer size, Integer page, Boolean sortOrder, SpringUserDetails userDetails) {
+    public PageableDTO<EntryDTO> searchFeedEntries(String feedId, String searchString, Pageable pageRequest, SpringUserDetails userDetails) {
         if (!UuidValidator.isValid(feedId)) throw new InvalidUuidException(feedId);
         UUID feedUuid = UUID.fromString(feedId);
-        Pageable pageRequest = createPageRequest(size, page, sortOrder);
         Page<Entry> entryList = entryRepository.searchEntriesByFeedUuidAndUsersUuid(feedUuid, userDetails.getUuid(), searchString, pageRequest);
         PagedModel<EntityModel<Entry>> pagedModel = pagedResourcesAssembler.toModel(entryList);
         List<EntryDTO> entryListDTO = convertToEntryDTOs(pagedModel, userDetails);
         return PageableDTO.of(pagedModel, entryListDTO);
     }
 
-    public PageableDTO<EntryDTO> searchBookmarkedEntries(String searchString, Integer size, Integer page, Boolean sortOrder, SpringUserDetails userDetails) {
-        Pageable pageRequest = createPageRequest(size, page, sortOrder);
+    public PageableDTO<EntryDTO> searchBookmarkedEntries(String searchString, Pageable pageRequest, SpringUserDetails userDetails) {
         Page<Entry> entryList = entryRepository.searchBookmarkedEntriesByUsersUuid(userDetails.getUuid(), searchString, pageRequest);
         PagedModel<EntityModel<Entry>> pagedModel = pagedResourcesAssembler.toModel(entryList);
         List<EntryDTO> entryListDTO = convertToEntryDTOs(pagedModel, userDetails);
         return PageableDTO.of(pagedModel, entryListDTO);
     }
 
-    public PageableDTO<EntryDTO> searchFavoriteEntries(String searchString, Integer size, Integer page, Boolean sortOrder, SpringUserDetails userDetails) {
-        Pageable pageRequest = createPageRequest(size, page, sortOrder);
+    public PageableDTO<EntryDTO> searchFavoriteEntries(String searchString, Pageable pageRequest, SpringUserDetails userDetails) {
         Page<Entry> entryList = entryRepository.searchFavoriteEntriesByUsersUuid(userDetails.getUuid(), searchString, pageRequest);
         PagedModel<EntityModel<Entry>> pagedModel = pagedResourcesAssembler.toModel(entryList);
         List<EntryDTO> entryListDTO = convertToEntryDTOs(pagedModel, userDetails);
         return PageableDTO.of(pagedModel, entryListDTO);
-    }
-
-    private Pageable createPageRequest(Integer size, Integer page, Boolean sortOrder) {
-        var by = Sort.by("pubDate");
-        var sort = sortOrder ? by.ascending() : by.descending();
-        return PageRequest.of(page, size, sort);
     }
 
     private List<EntryDTO> convertToEntryDTOs(PagedModel<EntityModel<Entry>> pagedModel, SpringUserDetails userDetails) {

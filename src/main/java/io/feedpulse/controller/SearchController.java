@@ -5,6 +5,9 @@ import io.feedpulse.dto.response.FeedDTO;
 import io.feedpulse.dto.response.PageableDTO;
 import io.feedpulse.model.SpringUserDetails;
 import io.feedpulse.service.SearchService;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -24,52 +27,42 @@ public class SearchController {
     @RequestMapping("/entries")
     public PageableDTO<EntryDTO> search(
             @RequestParam() String searchString,
-            @RequestParam(defaultValue = "20") Integer size,
-            @RequestParam(defaultValue = "0") Integer page,
-            @RequestParam(required = false, defaultValue = "true") Boolean sortOrder,
+            @PageableDefault(sort = {"pubDate"},direction = Sort.Direction.DESC) Pageable pageable,
             @AuthenticationPrincipal SpringUserDetails userDetails) {
-        return searchService.searchEntries(searchString, size, page, sortOrder, userDetails);
+        return searchService.searchEntries(searchString, pageable, userDetails);
     }
 
     @RequestMapping("/feeds")
     public PageableDTO<FeedDTO> searchFeeds(
             @RequestParam() String searchString,
-            @RequestParam(defaultValue = "20") Integer size,
-            @RequestParam(defaultValue = "0") Integer page,
-            @RequestParam(required = false, defaultValue = "true") Boolean sortOrder,
+            @PageableDefault(sort = {"pubDate"},direction = Sort.Direction.DESC) Pageable pageable,
             @AuthenticationPrincipal SpringUserDetails userDetails) {
-        return searchService.searchFeeds(searchString, size, page, sortOrder, userDetails);
+        return searchService.searchFeeds(searchString, pageable, userDetails);
     }
 
     @RequestMapping("/feeds/{feedId}")
     public PageableDTO<EntryDTO> searchFeed(
             @PathVariable String feedId,
             @RequestParam() String searchString,
-            @RequestParam(defaultValue = "20") Integer size,
-            @RequestParam(defaultValue = "0") Integer page,
-            @RequestParam(required = false, defaultValue = "true") Boolean sortOrder,
+            @PageableDefault(sort = {"pubDate"},direction = Sort.Direction.DESC) Pageable pageable,
             @AuthenticationPrincipal SpringUserDetails userDetails) {
-        return searchService.searchFeedEntries(feedId, searchString, size, page, sortOrder, userDetails);
+        return searchService.searchFeedEntries(feedId, searchString, pageable, userDetails);
     }
 
     @RequestMapping("/bookmarks")
     public PageableDTO<EntryDTO> bookmarksSearch(
             @RequestParam() String searchString,
-            @RequestParam(defaultValue = "20") Integer size,
-            @RequestParam(defaultValue = "0") Integer page,
-            @RequestParam(required = false, defaultValue = "true") Boolean sortOrder,
+            @PageableDefault(sort = {"pubDate"},direction = Sort.Direction.DESC) Pageable pageable,
             @AuthenticationPrincipal SpringUserDetails userDetails) {
-        return searchService.searchBookmarkedEntries(searchString, size, page, sortOrder, userDetails);
+        return searchService.searchBookmarkedEntries(searchString, pageable, userDetails);
     }
 
     @RequestMapping("/favorites")
     public PageableDTO<EntryDTO> favoritesSearch(
             @RequestParam() String searchString,
-            @RequestParam(defaultValue = "20") Integer size,
-            @RequestParam(defaultValue = "0") Integer page,
-            @RequestParam(required = false, defaultValue = "true") Boolean sortOrder,
+            @PageableDefault(sort = {"pubDate"}, direction = Sort.Direction.DESC) Pageable pageable,
             @AuthenticationPrincipal SpringUserDetails userDetails) {
-        return searchService.searchFavoriteEntries(searchString, size, page, sortOrder, userDetails);
+        return searchService.searchFavoriteEntries(searchString, pageable, userDetails);
     }
 
 }

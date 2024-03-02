@@ -8,6 +8,9 @@ import io.feedpulse.model.Feed;
 import io.feedpulse.model.SpringUserDetails;
 import io.feedpulse.service.EntryService;
 import io.feedpulse.service.FeedService;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -29,12 +32,10 @@ public class FeedController {
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.OK)
     public PageableDTO<FeedDTO> getFeed(
-            @RequestParam(defaultValue = "20") Integer size,
-            @RequestParam(defaultValue = "0") Integer page,
-            @RequestParam(required = false, defaultValue = "true") Boolean sortOrder,
+            @PageableDefault(sort = {"pubDate"}, direction = Sort.Direction.DESC) Pageable pageable,
             @AuthenticationPrincipal SpringUserDetails userDetails
     ) {
-        return feedService.getFeeds(size, page, sortOrder, userDetails);
+        return feedService.getFeeds(pageable, userDetails);
     }
 
     @GetMapping(value = "/{uuid}", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -45,12 +46,11 @@ public class FeedController {
 
     @ResponseStatus(HttpStatus.OK)
     @GetMapping(value = "/{uuid}/entries", produces = MediaType.APPLICATION_JSON_VALUE)
-    public PageableDTO<EntryDTO> getFeedEntries(@PathVariable String uuid,
-                                                @RequestParam(defaultValue = "20") Integer size,
-                                                @RequestParam(defaultValue = "0") Integer page,
-                                                @RequestParam(required = false, defaultValue = "true") Boolean sortOrder,
-                                                @AuthenticationPrincipal SpringUserDetails userDetails) {
-        return entryService.getFeedEntries(uuid, size, page, sortOrder, userDetails);
+    public PageableDTO<EntryDTO> getFeedEntries(
+            @PathVariable String uuid,
+            @PageableDefault(sort = {"pubDate"}, direction = Sort.Direction.DESC) Pageable pageable,
+            @AuthenticationPrincipal SpringUserDetails userDetails) {
+        return entryService.getFeedEntries(uuid, pageable, userDetails);
     }
 
     @PostMapping()

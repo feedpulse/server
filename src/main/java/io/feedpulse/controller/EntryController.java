@@ -7,6 +7,9 @@ import io.feedpulse.model.SpringUserDetails;
 import io.feedpulse.service.EntryService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.lang.NonNull;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -14,7 +17,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping(path = "/entries", produces = "application/json")
-public class EntryController {
+public class EntryController{
 
     private static final Logger log = LoggerFactory.getLogger(EntryController.class);
 
@@ -27,13 +30,11 @@ public class EntryController {
     @ResponseStatus(HttpStatus.OK)
     @GetMapping
     public PageableDTO<EntryDTO> getEntries(
-            @RequestParam(defaultValue = "20") Integer size,
-            @RequestParam(defaultValue = "0") Integer page,
-            @RequestParam(required = false, defaultValue = "true") Boolean sortOrder,
+            // TODO(V1): re-set sort to pubDate in the service layer, so that the user can sort by other fields
+            @PageableDefault(sort = {"pubDate"},direction = Sort.Direction.DESC) Pageable pageable,
             @AuthenticationPrincipal SpringUserDetails userDetails
     ) {
-        log.info("Getting entries with size: {}, page: {}, sortOrder: {}", size, page, sortOrder);
-        return entryService.getFeedEntries(size, page, sortOrder, userDetails);
+        return entryService.getFeedEntries(pageable, userDetails);
     }
 
     @ResponseStatus(HttpStatus.OK)
@@ -51,23 +52,19 @@ public class EntryController {
     @ResponseStatus(HttpStatus.OK)
     @GetMapping("/favorites")
     public PageableDTO<EntryDTO> getFavoriteEntries(
-            @RequestParam(defaultValue = "20") Integer size,
-            @RequestParam(defaultValue = "0") Integer page,
-            @RequestParam(required = false, defaultValue = "true") Boolean sortOrder,
+            @PageableDefault(sort = {"pubDate"},direction = Sort.Direction.DESC) Pageable pageable,
             @AuthenticationPrincipal SpringUserDetails userDetails
     ) {
-        return entryService.getFavoriteEntries(size, page, sortOrder, userDetails);
+        return entryService.getFavoriteEntries(pageable, userDetails);
     }
 
     @ResponseStatus(HttpStatus.OK)
     @GetMapping("/bookmarks")
     public PageableDTO<EntryDTO> getBookmarkedEntries(
-            @RequestParam(defaultValue = "20") Integer size,
-            @RequestParam(defaultValue = "0") Integer page,
-            @RequestParam(required = false, defaultValue = "true") Boolean sortOrder,
+            @PageableDefault(sort = {"pubDate"},direction = Sort.Direction.DESC) Pageable pageable,
             @AuthenticationPrincipal SpringUserDetails userDetails
     ) {
-        return entryService.getBookmarkedEntries(size, page, sortOrder, userDetails);
+        return entryService.getBookmarkedEntries(pageable, userDetails);
     }
 
 }
