@@ -83,7 +83,7 @@ public class EntryService {
         if (!UuidValidator.isValid(feedUuidString)) throw new InvalidUuidException(feedUuidString);
         UUID feedUuid = UUID.fromString(feedUuidString);
         Pageable pageRequest = createPageRequest(size, page, sortOrder);
-        Page<Entry> pageOfEntries = entryRepository.findEntriesByFeedUuidAndUsersId(feedUuid, userDetails.getId(), pageRequest);
+        Page<Entry> pageOfEntries = entryRepository.findEntriesByFeedUuidAndUsersUuid(feedUuid, userDetails.getUuid(), pageRequest);
         PagedModel<EntityModel<Entry>> pagedModel = pagedResourcesAssembler.toModel(pageOfEntries);
         List<EntryDTO> entryDTOs = convertToEntryDTOs(pagedModel, userDetails);
         return PageableDTO.of(pagedModel, entryDTOs);
@@ -91,7 +91,7 @@ public class EntryService {
 
     public PageableDTO<EntryDTO> getFeedEntries(Integer size, Integer page, Boolean sortOrder, SpringUserDetails userDetails) {
         Pageable pageRequest = createPageRequest(size, page, sortOrder);
-        Page<Entry> entryList = entryRepository.findEntriesByUsersId(userDetails.getId(), pageRequest);
+        Page<Entry> entryList = entryRepository.findEntriesByUsersUuid(userDetails.getUuid(), pageRequest);
         PagedModel<EntityModel<Entry>> pagedModel = pagedResourcesAssembler.toModel(entryList);
         List<EntryDTO> entryDTOs = convertToEntryDTOs(pagedModel, userDetails);
         return PageableDTO.of(pagedModel, entryDTOs);
@@ -100,7 +100,7 @@ public class EntryService {
     private @NonNull Entry getEntryFromDB(@Nullable String uuidString, SpringUserDetails springUserDetails) {
         if (!UuidValidator.isValid(uuidString)) throw new InvalidUuidException(uuidString);
         UUID uuid = UUID.fromString(uuidString);
-        Optional<Entry> entry = entryRepository.findEntryByUuidAndUsersId(uuid, springUserDetails.getId());
+        Optional<Entry> entry = entryRepository.findEntryByUuidAndUsersUuid(uuid, springUserDetails.getUuid());
         if (entry.isEmpty()) {
             throw new EntryNotFoundException(uuidString);
         }
@@ -110,14 +110,14 @@ public class EntryService {
     public @NonNull EntryDTO getEntry(@Nullable String uuidString, SpringUserDetails springUserDetails) {
         Entry entry = getEntryFromDB(uuidString, springUserDetails);
         UserEntryInteraction userEntryInteraction = userEntryInteractionRepository
-                .findByUserIdAndEntryUuid(springUserDetails.getId(), UUID.fromString(uuidString))
+                .findByUserUuidAndEntryUuid(springUserDetails.getUuid(), UUID.fromString(uuidString))
                 .orElse(null);
         return EntryDTO.of(entry, userEntryInteraction);
     }
 
 
     public Optional<Entry> getUserEntryByLink(String link, SpringUserDetails springUserDetails) {
-        return entryRepository.findEntryByLinkAndUsersId(link, springUserDetails.getId());
+        return entryRepository.findEntryByLinkAndUsersUuid(link, springUserDetails.getUuid());
     }
 
     public Optional<Entry> getEntryByLink(String link) {
@@ -125,10 +125,10 @@ public class EntryService {
     }
 
     public void updateEntry(String entryUuid, @Nullable Boolean read, @Nullable Boolean favorite, @Nullable Boolean bookmark, SpringUserDetails springUserDetails) {
-        User user = userService.getUserById(springUserDetails.getId());
+        User user = userService.getUserByUuid(springUserDetails.getUuid());
         Entry entry = getEntryFromDB(entryUuid, springUserDetails);
         UserEntryInteraction userEntryInteraction = userEntryInteractionRepository
-                .findByUserIdAndEntryUuid(springUserDetails.getId(), entry.getUuid())
+                .findByUserUuidAndEntryUuid(springUserDetails.getUuid(), entry.getUuid())
                 .orElse(new UserEntryInteraction(user, entry));
         if (read != null) userEntryInteraction.setRead(read);
         if (favorite != null) userEntryInteraction.setFavorite(favorite);
@@ -136,14 +136,14 @@ public class EntryService {
         userEntryInteractionRepository.save(userEntryInteraction);
     }
 
-    public EntryDTO toEntryDTO(@NonNull Entry entry, @NonNull Long userId) {
-        return toEntryDTO(entry, userId, null);
+    public EntryDTO toEntryDTO(@NonNull Entry entry, @NonNull UUID userUuid) {
+        return toEntryDTO(entry, userUuid, null);
     }
 
-    public EntryDTO toEntryDTO(@NonNull Entry entry, @NonNull Long userId, @Nullable UserEntryInteraction userEntryInteraction) {
+    public EntryDTO toEntryDTO(@NonNull Entry entry, @NonNull UUID userUuid, @Nullable UserEntryInteraction userEntryInteraction) {
         if (userEntryInteraction == null) {
             userEntryInteraction = userEntryInteractionRepository
-                    .findByUserIdAndEntryUuid(userId, entry.getUuid())
+                    .findByUserUuidAndEntryUuid(userUuid, entry.getUuid())
                     .orElse(null);
         }
         return EntryDTO.of(entry, userEntryInteraction);
@@ -155,7 +155,7 @@ public class EntryService {
 
     public PageableDTO<EntryDTO> getFavoriteEntries(Integer size, Integer page, Boolean sortOrder, SpringUserDetails userDetails) {
         Pageable pageRequest = createPageRequest(size, page, sortOrder);
-        Page<Entry> entryList = entryRepository.findFavoriteEntriesByUsersId(userDetails.getId(), pageRequest);
+        Page<Entry> entryList = entryRepository.findFavoriteEntriesByUsersUuid(userDetails.getUuid(), pageRequest);
         PagedModel<EntityModel<Entry>> pagedModel = pagedResourcesAssembler.toModel(entryList);
         List<EntryDTO> entryListDTO = convertToEntryDTOs(pagedModel, userDetails);
         return PageableDTO.of(pagedModel, entryListDTO);
@@ -163,7 +163,7 @@ public class EntryService {
 
     public PageableDTO<EntryDTO> getBookmarkedEntries(Integer size, Integer page, Boolean sortOrder, SpringUserDetails userDetails) {
         Pageable pageRequest = createPageRequest(size, page, sortOrder);
-        Page<Entry> entryList = entryRepository.findBookmarkedEntriesByUsersId(userDetails.getId(), pageRequest);
+        Page<Entry> entryList = entryRepository.findBookmarkedEntriesByUsersUuid(userDetails.getUuid(), pageRequest);
         PagedModel<EntityModel<Entry>> pagedModel = pagedResourcesAssembler.toModel(entryList);
         List<EntryDTO> entryListDTO = convertToEntryDTOs(pagedModel, userDetails);
         return PageableDTO.of(pagedModel, entryListDTO);
@@ -171,7 +171,7 @@ public class EntryService {
 
     public PageableDTO<EntryDTO> searchEntries(String searchString, Integer size, Integer page, Boolean sortOrder, SpringUserDetails userDetails) {
         Pageable pageRequest = createPageRequest(size, page, sortOrder);
-        Page<Entry> entryList = entryRepository.searchEntriesByUsersId(userDetails.getId(), searchString, pageRequest);
+        Page<Entry> entryList = entryRepository.searchEntriesByUsersUuid(userDetails.getUuid(), searchString, pageRequest);
         PagedModel<EntityModel<Entry>> pagedModel = pagedResourcesAssembler.toModel(entryList);
         List<EntryDTO> entryListDTO = convertToEntryDTOs(pagedModel, userDetails);
         return PageableDTO.of(pagedModel, entryListDTO);
@@ -181,7 +181,7 @@ public class EntryService {
         if (!UuidValidator.isValid(feedId)) throw new InvalidUuidException(feedId);
         UUID feedUuid = UUID.fromString(feedId);
         Pageable pageRequest = createPageRequest(size, page, sortOrder);
-        Page<Entry> entryList = entryRepository.searchEntriesByFeedUuidAndUsersId(feedUuid, userDetails.getId(), searchString, pageRequest);
+        Page<Entry> entryList = entryRepository.searchEntriesByFeedUuidAndUsersUuid(feedUuid, userDetails.getUuid(), searchString, pageRequest);
         PagedModel<EntityModel<Entry>> pagedModel = pagedResourcesAssembler.toModel(entryList);
         List<EntryDTO> entryListDTO = convertToEntryDTOs(pagedModel, userDetails);
         return PageableDTO.of(pagedModel, entryListDTO);
@@ -189,7 +189,7 @@ public class EntryService {
 
     public PageableDTO<EntryDTO> searchBookmarkedEntries(String searchString, Integer size, Integer page, Boolean sortOrder, SpringUserDetails userDetails) {
         Pageable pageRequest = createPageRequest(size, page, sortOrder);
-        Page<Entry> entryList = entryRepository.searchBookmarkedEntriesByUsersId(userDetails.getId(), searchString, pageRequest);
+        Page<Entry> entryList = entryRepository.searchBookmarkedEntriesByUsersUuid(userDetails.getUuid(), searchString, pageRequest);
         PagedModel<EntityModel<Entry>> pagedModel = pagedResourcesAssembler.toModel(entryList);
         List<EntryDTO> entryListDTO = convertToEntryDTOs(pagedModel, userDetails);
         return PageableDTO.of(pagedModel, entryListDTO);
@@ -197,7 +197,7 @@ public class EntryService {
 
     public PageableDTO<EntryDTO> searchFavoriteEntries(String searchString, Integer size, Integer page, Boolean sortOrder, SpringUserDetails userDetails) {
         Pageable pageRequest = createPageRequest(size, page, sortOrder);
-        Page<Entry> entryList = entryRepository.searchFavoriteEntriesByUsersId(userDetails.getId(), searchString, pageRequest);
+        Page<Entry> entryList = entryRepository.searchFavoriteEntriesByUsersUuid(userDetails.getUuid(), searchString, pageRequest);
         PagedModel<EntityModel<Entry>> pagedModel = pagedResourcesAssembler.toModel(entryList);
         List<EntryDTO> entryListDTO = convertToEntryDTOs(pagedModel, userDetails);
         return PageableDTO.of(pagedModel, entryListDTO);
@@ -213,7 +213,7 @@ public class EntryService {
         return pagedModel.getContent().stream()
                 .map(EntityModel::getContent)
                 .filter(Objects::nonNull)
-                .map(entry -> toEntryDTO(entry, userDetails.getId()))
+                .map(entry -> toEntryDTO(entry, userDetails.getUuid()))
                 .toList();
     }
 }

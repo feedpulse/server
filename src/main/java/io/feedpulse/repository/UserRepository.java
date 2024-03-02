@@ -10,11 +10,14 @@ import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 public interface UserRepository extends JpaRepository<User, Long> {
 
     Optional<User> findByUsername(String username);
     Optional<User> findByEmail(String email);
+    Optional<User> findByUuid(UUID uuid);
+
     Boolean existsByUsername(String username);
     Boolean existsByEmail(String email);
 
@@ -22,4 +25,5 @@ public interface UserRepository extends JpaRepository<User, Long> {
     List<User> findAllByRole(Role role);
 
     Page<User> findAll(Specification<User> spec, Pageable pageable);
+
 }

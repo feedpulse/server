@@ -54,7 +54,7 @@ public class FeedService {
 
     public PageableDTO<FeedDTO> getFeeds(Integer size, Integer page, Boolean sortOrder, SpringUserDetails springUserDetails) {
         Pageable pageRequest = createPageRequest(size, page, sortOrder);
-        Page<Feed> feeds = feedRepository.findFeedsByUsersId(springUserDetails.getId(), pageRequest);
+        Page<Feed> feeds = feedRepository.findFeedsByUsersUuid(springUserDetails.getUuid(), pageRequest);
         PagedModel<EntityModel<Feed>> pagedModel = pagedResourcesAssembler.toModel(feeds);
         List<FeedDTO> feedDTOs = convertToFeedDTO(pagedModel);
         return PageableDTO.of(pagedModel, feedDTOs);
@@ -63,7 +63,7 @@ public class FeedService {
     public Feed getFeed(String uuidString, SpringUserDetails userDetails) {
         if (!UuidValidator.isValid(uuidString)) throw new InvalidUuidException(uuidString);
         UUID uuid = UUID.fromString(uuidString);
-        Optional<Feed> feed = feedRepository.findFeedByUuidAndUsersId(uuid, userDetails.getId());
+        Optional<Feed> feed = feedRepository.findFeedByUuidAndUsersUuid(uuid, userDetails.getUuid());
         if (feed.isEmpty()) {
             throw new FeedNotFoundException(uuidString);
         }
@@ -72,7 +72,7 @@ public class FeedService {
 
     @Transactional(noRollbackFor = BaseException.class)
     public FeedDTO addFeed(String feedUrl, SpringUserDetails userDetails) {
-        User user = userService.getUserById(userDetails.getId());
+        User user = userService.getUserByUuid(userDetails.getUuid());
         Optional<Feed> existingFeed = feedRepository.findByFeedUrl(feedUrl);
         if (existingFeed.isPresent()) {
             // if the feed already exists, add it to the user's feeds
@@ -108,14 +108,14 @@ public class FeedService {
 
     @Transactional(noRollbackFor = BaseException.class)
     public void deleteFeedForUser(String uuid, SpringUserDetails userDetails) {
-        User user = userService.getUserById(userDetails.getId());
+        User user = userService.getUserByUuid(userDetails.getUuid());
         if (!UuidValidator.isValid(uuid)) throw new InvalidUuidException(uuid);
-        Optional<Feed> feed = feedRepository.findFeedByUuidAndUsersId(UUID.fromString(uuid), userDetails.getId());
+        Optional<Feed> feed = feedRepository.findFeedByUuidAndUsersUuid(UUID.fromString(uuid), userDetails.getUuid());
         if (feed.isEmpty()) {
             throw new FeedNotFoundException(uuid);
         }
         // delete all user entry interactions for the feed
-        userEntryInteractionService.deleteAllUserEntryInteractionsForFeed(userDetails.getId(), feed.get());
+        userEntryInteractionService.deleteAllUserEntryInteractionsForFeed(user.getId(), feed.get());
         // remove the feed from the user's feeds
         user.getFeeds().remove(feed.get());
         userService.saveUser(user);
@@ -144,7 +144,7 @@ public class FeedService {
 
     public PageableDTO<FeedDTO> searchFeeds(String searchString, Integer size, Integer page, Boolean sortOrder, SpringUserDetails userDetails) {
         Pageable pageRequest = createPageRequest(size, page, sortOrder);
-        Page<Feed> feedList = feedRepository.searchFeedsByUserId(userDetails.getId(), searchString, pageRequest);
+        Page<Feed> feedList = feedRepository.searchFeedsByUserUuid(userDetails.getUuid(), searchString, pageRequest);
         PagedModel<EntityModel<Feed>> pagedModel = pagedResourcesAssembler.toModel(feedList);
         List<FeedDTO> feedDTOList = convertToFeedDTO(pagedModel);
         return PageableDTO.of(pagedModel, feedDTOList);

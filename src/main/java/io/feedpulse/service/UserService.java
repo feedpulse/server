@@ -3,7 +3,7 @@ package io.feedpulse.service;
 import com.sanctionco.jmail.InvalidEmailException;
 import io.feedpulse.dto.request.UserUpdateRequestDTO;
 import io.feedpulse.dto.response.PageableDTO;
-import io.feedpulse.dto.response.SimpleUserDTO;
+import io.feedpulse.dto.response.UserDTO;
 import io.feedpulse.exceptions.auth.InvalidPasswordException;
 import io.feedpulse.exceptions.entity.UserNotFoundException;
 import io.feedpulse.model.Role;
@@ -35,6 +35,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.UUID;
 
 
 @Service
@@ -62,8 +63,8 @@ public class UserService {
         this.mailService = mailService;
     }
 
-    public User updateUser(Long id, UserUpdateRequestDTO userUpdateRequestDTO) {
-        User updatedUser = getUserById(id);
+    public User updateUser(UUID id, UserUpdateRequestDTO userUpdateRequestDTO) {
+        User updatedUser = this.getUserByUuid(id);
 
         String email = userUpdateRequestDTO.getEmail().orElse(null);
         if (email != null) {
@@ -100,14 +101,14 @@ public class UserService {
     }
 
     public User updateUser(UserUpdateRequestDTO userUpdateRequestDTO, SpringUserDetails userDetails) {
-        return updateUser(userDetails.getId(), userUpdateRequestDTO);
+        return updateUser(userDetails.getUuid(), userUpdateRequestDTO);
     }
 
-    public User enableUser(Long id, Boolean enable) throws UserNotFoundException {
+    public User enableUser(UUID uuid, Boolean enable) throws UserNotFoundException {
         if (enable == null) {
             throw new IllegalArgumentException("Enable parameter cannot be null");
         }
-        User user = getUserById(id);
+        User user = getUserByUuid(uuid);
         boolean wasEnabled = user.isUserEnabled();
         user.setUserEnabled(enable);
         user = userRepository.save(user);
@@ -118,7 +119,7 @@ public class UserService {
     }
 
     public User getCurrentUserFromDb(SpringUserDetails userDetails) {
-        return getUserById(userDetails.getId());
+        return getUserByUuid(userDetails.getUuid());
     }
 
     @NonNull
@@ -147,6 +148,14 @@ public class UserService {
         );
     }
 
+
+    public User getUserByUuid(UUID userUuid) {
+        return userRepository.findByUuid(userUuid).orElseThrow(
+                () -> new UserNotFoundException("UUID", userUuid.toString())
+        );
+    }
+
+
     public List<User> getAllAdmins() {
         return userRepository.findAllByRole(io.feedpulse.model.enums.Role.ROLE_ADMIN);
     }
@@ -155,14 +164,14 @@ public class UserService {
         userRepository.save(user);
     }
 
-    public PageableDTO<SimpleUserDTO> getUsers(Pageable pageable) {
+    public PageableDTO<UserDTO> getUsers(Pageable pageable) {
         Page<User> userList = userRepository.findAll(pageable);
         PagedModel<EntityModel<User>> pagedModel = pagedResourcesAssembler.toModel(userList);
-        List<SimpleUserDTO> simpleUserDTOs = convertToSimpleUserDTO(pagedModel);
-        return PageableDTO.of(pagedModel, simpleUserDTOs);
+        List<UserDTO> userDTOS = convertToSimpleUserDTO(pagedModel);
+        return PageableDTO.of(pagedModel, userDTOS);
     }
 
-    public PageableDTO<SimpleUserDTO> getUsersWithFilter(Pageable pageable, String email, Boolean isEnabled) {
+    public PageableDTO<UserDTO> getUsersWithFilter(Pageable pageable, String email, Boolean isEnabled) {
         Specification<User> spec = Specification.where(null);
 
         if (email != null && !email.isEmpty()) {
@@ -177,15 +186,15 @@ public class UserService {
 
         Page<User> userList = userRepository.findAll(spec, pageable);
         PagedModel<EntityModel<User>> pagedModel = pagedResourcesAssembler.toModel(userList);
-        List<SimpleUserDTO> simpleUserDTOs = convertToSimpleUserDTO(pagedModel);
-        return PageableDTO.of(pagedModel, simpleUserDTOs);
+        List<UserDTO> userDTOS = convertToSimpleUserDTO(pagedModel);
+        return PageableDTO.of(pagedModel, userDTOS);
     }
 
-    private static List<SimpleUserDTO> convertToSimpleUserDTO(PagedModel<EntityModel<User>> pagedModel) {
+    private static List<UserDTO> convertToSimpleUserDTO(PagedModel<EntityModel<User>> pagedModel) {
         return pagedModel.getContent().stream()
                 .map(EntityModel::getContent)
                 .filter(Objects::nonNull)
-                .map(SimpleUserDTO::of)
+                .map(UserDTO::of)
                 .toList();
     }
 }

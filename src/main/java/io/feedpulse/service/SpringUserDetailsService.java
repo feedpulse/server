@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -50,7 +51,7 @@ public class SpringUserDetailsService implements UserDetailsService {
                     .collect(Collectors.toList());
         };
         List<SimpleGrantedAuthority> authorities = jwtUtil.extractClaim(jwtToken, extractAuthorities);
-        Long userId = jwtUtil.extractUserId(jwtToken);
-        return new SpringUserDetails(userId, username, "", true, false, authorities);
+        UUID userUuid = jwtUtil.extractUserUuid(jwtToken);
+        return new SpringUserDetails(userUuid, username, "", true, false, authorities);
     }
 }

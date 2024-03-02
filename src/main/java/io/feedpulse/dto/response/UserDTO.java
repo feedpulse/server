@@ -3,22 +3,20 @@ package io.feedpulse.dto.response;
 import io.feedpulse.model.User;
 import io.feedpulse.model.Role;
 
-import java.util.Base64;
 import java.util.Set;
 
-public record SimpleUserDTO(
+public record UserDTO(
 
-        String id,
+        String uuid,
         String username,
         String email,
         Set<Role> role,
         boolean enabled,
         boolean locked) {
 
-    public static SimpleUserDTO of(User user) {
-        String id = Base64.getEncoder().encodeToString(user.getId().toString().getBytes());
-        return new SimpleUserDTO(
-                id,
+    public static UserDTO of(User user) {
+        return new UserDTO(
+                user.getUuid().toString(),
                 user.getUsername(),
                 user.getEmail(),
                 user.getRoles(),

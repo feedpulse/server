@@ -8,10 +8,7 @@ import org.springframework.lang.NonNull;
 import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 @Data
 @Entity
@@ -25,6 +22,10 @@ public class User implements Serializable {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @NonNull
     private Long id;
+
+    @GeneratedValue(strategy = GenerationType.UUID)
+    @Column(unique = true, nullable = false, updatable = false)
+    private UUID uuid = UUID.randomUUID();
 
     @NonNull
     @Column(unique = true)

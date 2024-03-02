@@ -13,6 +13,7 @@ import java.util.UUID;
 public interface UserEntryInteractionRepository extends JpaRepository<UserEntryInteraction, Long> {
 
     Optional<UserEntryInteraction> findByUserIdAndEntryUuid(Long userId, UUID entryId);
+    Optional<UserEntryInteraction> findByUserUuidAndEntryUuid(UUID userUuid, UUID entryId);
 
     @Query("SELECT uei FROM UserEntryInteraction uei JOIN uei.entry e WHERE uei.user.id = :userId AND e IN :entries")
     List<UserEntryInteraction> findByUserIdForEntries(Long userId, List<Entry> entries);

@@ -7,13 +7,16 @@ import org.springframework.security.core.userdetails.UserDetails;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 public class SpringUserDetails implements UserDetails {
 
     private static final long serialVersionUID = 1L;
 
-    private Long id;
+//    private Long id;
+
+    private UUID uuid;
 
     private String username;
 
@@ -28,9 +31,9 @@ public class SpringUserDetails implements UserDetails {
 
     private Collection<? extends GrantedAuthority> authorities;
 
-    public SpringUserDetails(Long id, String email, String password,
+    public SpringUserDetails(UUID uuid, String email, String password,
                              boolean userEnabled, boolean userLocked, Collection<? extends GrantedAuthority> authorities) {
-        this.id = id;
+        this.uuid = uuid;
         this.username = email;
         this.email = email;
         this.password = password;
@@ -45,7 +48,7 @@ public class SpringUserDetails implements UserDetails {
                 .collect(Collectors.toList());
 
         return new SpringUserDetails(
-                user.getId(),
+                user.getUuid(),
                 user.getEmail(),
                 user.getPassword(),
                 user.isUserEnabled(),
@@ -58,8 +61,8 @@ public class SpringUserDetails implements UserDetails {
         return authorities;
     }
 
-    public Long getId() {
-        return id;
+    public UUID getUuid() {
+        return uuid;
     }
 
     public String getEmail() {
@@ -103,6 +106,6 @@ public class SpringUserDetails implements UserDetails {
         if (o == null || getClass() != o.getClass())
             return false;
         SpringUserDetails user = (SpringUserDetails) o;
-        return Objects.equals(id, user.id);
+        return Objects.equals(uuid, user.uuid);
     }
 }

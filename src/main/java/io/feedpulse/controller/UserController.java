@@ -2,7 +2,7 @@ package io.feedpulse.controller;
 
 import io.feedpulse.dto.request.UserUpdateRequestDTO;
 import io.feedpulse.dto.response.PageableDTO;
-import io.feedpulse.dto.response.SimpleUserDTO;
+import io.feedpulse.dto.response.UserDTO;
 import io.feedpulse.exceptions.entity.UserNotFoundException;
 import io.feedpulse.model.SpringUserDetails;
 import io.feedpulse.model.User;
@@ -13,6 +13,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/users")
@@ -28,16 +30,16 @@ public class UserController {
 
     @GetMapping()
     @PreAuthorize("hasRole('ADMIN')")
-    public PageableDTO<SimpleUserDTO> getUsers(Pageable pageable) {
+    public PageableDTO<UserDTO> getUsers(Pageable pageable) {
         return userService.getUsers(pageable);
     }
 
 
     @GetMapping("/filtered")
     @PreAuthorize("hasRole('ADMIN')")
-    public PageableDTO<SimpleUserDTO> getUsersWithFilter(Pageable pageable,
-                                                         @RequestParam(required = false) String email,
-                                                         @RequestParam(required = false) Boolean isEnabled) {
+    public PageableDTO<UserDTO> getUsersWithFilter(Pageable pageable,
+                                                   @RequestParam(required = false) String email,
+                                                   @RequestParam(required = false) Boolean isEnabled) {
         log.info("Getting users with filter: email={}, isEnabled={}", email, isEnabled);
 
         return userService.getUsersWithFilter(pageable, email, isEnabled);
@@ -53,10 +55,10 @@ public class UserController {
         return userService.updateUser(userUpdateRequestDTO, userDetails);
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("/{uuid}")
     @PreAuthorize("hasRole('ADMIN')")
-    public User getUserById(@PathVariable Long id) throws UserNotFoundException {
-        return userService.getUserById(id);
+    public User getUserByUuid(@PathVariable UUID uuid) throws UserNotFoundException {
+        return userService.getUserByUuid(uuid);
     }
 
     /**
@@ -69,16 +71,16 @@ public class UserController {
         return userService.getUserByEmail(email);
     }
 
-    @PostMapping("/{id}")
+    @PostMapping("/{uuid}")
     @PreAuthorize("hasRole('ADMIN')")
-    public User updateUser(@PathVariable Long id, @RequestBody UserUpdateRequestDTO userUpdateRequestDTO) {
-        return userService.updateUser(id, userUpdateRequestDTO);
+    public User updateUser(@PathVariable UUID uuid, @RequestBody UserUpdateRequestDTO userUpdateRequestDTO) {
+        return userService.updateUser(uuid, userUpdateRequestDTO);
     }
 
-    @PostMapping("/{id}/enable")
+    @PostMapping("/{uuid}/enable")
     @PreAuthorize("hasRole('ADMIN')")
-    public User enableUser(@PathVariable Long id, @RequestParam Boolean enable) throws UserNotFoundException {
-        return userService.enableUser(id, enable);
+    public User enableUser(@PathVariable UUID uuid, @RequestParam Boolean enable) throws UserNotFoundException {
+        return userService.enableUser(uuid, enable);
     }
 
 
