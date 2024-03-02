@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 @RestControllerAdvice
@@ -36,7 +37,7 @@ public class ResponseEntityExceptionHandlerAdvice {
     @ExceptionHandler({AccessDeniedException.class})
     protected ResponseEntity<ExceptionResponse> handleAccessDeniedException(AccessDeniedException ex) {
         log.error("AccessDeniedException: ", ex);
-        BaseException e = new NotAuthenticatedException();
+        BaseException e = new io.feedpulse.exceptions.security.AccessDeniedException();
         return new ResponseEntity<>(ExceptionResponse.fromException(e), HttpStatus.valueOf(e.getStatus()));
     }
 
@@ -45,6 +46,7 @@ public class ResponseEntityExceptionHandlerAdvice {
      * This exception is thrown by the Spring framework, because of the '@RequestBody' annotation on the controller methods.
      */
     @ExceptionHandler({HttpMessageNotReadableException.class})
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ResponseEntity<ExceptionResponse> handleHttpMessageNotReadableException(HttpMessageNotReadableException ex) {
         BaseException e = new InvalidRequestBodyException();
         log.error("HttpMessageNotReadableException: ", ex);
