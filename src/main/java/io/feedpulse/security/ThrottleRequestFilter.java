@@ -15,7 +15,7 @@ import java.util.concurrent.TimeUnit;
 
 //@Component
 public class ThrottleRequestFilter extends OncePerRequestFilter {
-    private int MAX_REQUESTS_PER_MINUTE = 20; //or whatever you want it to be
+    private int MAX_REQUESTS_PER_MINUTE = 50; //or whatever you want it to be
 
     private LoadingCache<String, Integer> requestCountsPerIpAddress;
 

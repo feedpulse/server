@@ -51,10 +51,10 @@ public class WebSecurityConfig {
         return new AuthTokenFilter();
     }
 
-    @Bean
-    public ThrottleRequestFilter throttleRequestFilter() {
-        return new ThrottleRequestFilter();
-    }
+//    @Bean
+//    public ThrottleRequestFilter throttleRequestFilter() {
+//        return new ThrottleRequestFilter();
+//    }
 
     @Bean
     public DaoAuthenticationProvider authenticationProvider() {
@@ -115,7 +115,7 @@ public class WebSecurityConfig {
 //                        .anyRequest().permitAll()
                 )
                 .addFilterBefore(authenticationJwtTokenFilter(), UsernamePasswordAuthenticationFilter.class)
-                .addFilterBefore(throttleRequestFilter(), authenticationJwtTokenFilter().getClass())
+//                .addFilterBefore(throttleRequestFilter(), authenticationJwtTokenFilter().getClass())
                 .authenticationProvider(authenticationProvider());
 
         return http.build();
