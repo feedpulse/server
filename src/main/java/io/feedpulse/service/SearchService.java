@@ -1,7 +1,7 @@
 package io.feedpulse.service;
 
 import io.feedpulse.dto.response.EntryDTO;
-import io.feedpulse.dto.response.FeedDTO;
+import io.feedpulse.dto.response.FeedWithoutEntriesDTO;
 import io.feedpulse.dto.response.PageableDTO;
 import io.feedpulse.model.SpringUserDetails;
 import org.springframework.data.domain.Pageable;
@@ -35,7 +35,7 @@ public class SearchService {
         return entryService.searchFavoriteEntries(searchString, pageRequest, userDetails);
     }
 
-    public PageableDTO<FeedDTO> searchFeeds(String searchString, Pageable pageRequest, @AuthenticationPrincipal SpringUserDetails userDetails) {
+    public PageableDTO<FeedWithoutEntriesDTO> searchFeeds(String searchString, Pageable pageRequest, @AuthenticationPrincipal SpringUserDetails userDetails) {
         return feedService.searchFeeds(searchString, pageRequest, userDetails);
     }
 

@@ -2,7 +2,8 @@ package io.feedpulse.service;
 
 
 import com.rometools.rome.feed.synd.SyndFeed;
-import io.feedpulse.dto.response.FeedDTO;
+import io.feedpulse.dto.response.FeedWithEntriesDTO;
+import io.feedpulse.dto.response.FeedWithoutEntriesDTO;
 import io.feedpulse.dto.response.PageableDTO;
 import io.feedpulse.exceptions.BaseException;
 import io.feedpulse.exceptions.common.InvalidUuidException;
@@ -13,10 +14,9 @@ import io.feedpulse.model.SpringUserDetails;
 import io.feedpulse.model.User;
 import io.feedpulse.repository.FeedRepository;
 import io.feedpulse.validation.UuidValidator;
+import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PagedResourcesAssembler;
 import org.springframework.hateoas.EntityModel;
 import org.springframework.hateoas.PagedModel;
@@ -52,25 +52,36 @@ public class FeedService {
     }
 
 
-    public PageableDTO<FeedDTO> getFeeds(Pageable pageRequest, SpringUserDetails springUserDetails) {
+    public PageableDTO<FeedWithoutEntriesDTO> getFeeds(Pageable pageRequest, SpringUserDetails springUserDetails) {
         Page<Feed> feeds = feedRepository.findFeedsByUsersUuid(springUserDetails.getUuid(), pageRequest);
         PagedModel<EntityModel<Feed>> pagedModel = pagedResourcesAssembler.toModel(feeds);
-        List<FeedDTO> feedDTOs = convertToFeedDTO(pagedModel);
-        return PageableDTO.of(pagedModel, feedDTOs);
+        List<FeedWithoutEntriesDTO> feedWithoutEntriesDTOS = convertToFeedDTO(pagedModel, springUserDetails);
+        return PageableDTO.of(pagedModel, feedWithoutEntriesDTOS);
     }
 
-    public Feed getFeed(String uuidString, SpringUserDetails userDetails) {
+    public FeedWithEntriesDTO getFeed(String uuidString, SpringUserDetails userDetails) {
         if (!UuidValidator.isValid(uuidString)) throw new InvalidUuidException(uuidString);
         UUID uuid = UUID.fromString(uuidString);
         Optional<Feed> feed = feedRepository.findFeedByUuidAndUsersUuid(uuid, userDetails.getUuid());
         if (feed.isEmpty()) {
             throw new FeedNotFoundException(uuidString);
         }
-        return feed.get();
+        Integer unreadCount = getUnreadFeedEntries(uuidString, userDetails);
+
+        return FeedWithEntriesDTO.of(feed.get(), unreadCount);
+    }
+
+    private Integer getUnreadFeedEntries(@Valid String uuidString, SpringUserDetails userDetails) {
+        if (!UuidValidator.isValid(uuidString)) throw new InvalidUuidException(uuidString);
+        UUID feedUuid = UUID.fromString(uuidString);
+        Integer unreadCount = feedRepository.countUnreadFeedEntries(userDetails.getUuid(), feedUuid);
+        System.out.println("\n\n\n\n\n");
+        System.out.println("Unread count: " + unreadCount);
+        return unreadCount;
     }
 
     @Transactional(noRollbackFor = BaseException.class)
-    public FeedDTO addFeed(String feedUrl, SpringUserDetails userDetails) {
+    public FeedWithoutEntriesDTO addFeed(String feedUrl, SpringUserDetails userDetails) {
         User user = userService.getUserByUuid(userDetails.getUuid());
         Optional<Feed> existingFeed = feedRepository.findByFeedUrl(feedUrl);
         if (existingFeed.isPresent()) {
@@ -80,7 +91,7 @@ public class FeedService {
                 user.getFeeds().add(existingFeed.get());
             }
             userService.saveUser(user);
-            return FeedDTO.of(existingFeed.get());
+            return FeedWithoutEntriesDTO.of(existingFeed.get(), getUnreadFeedEntries(existingFeed.get().getUuid().toString(), userDetails));
         }
 
         Feed.FeedBuilder feedBuilder = Feed.builder();
@@ -102,7 +113,7 @@ public class FeedService {
         user.getFeeds().add(feed);
         userService.saveUser(user);
         feedFetchService.fetchFeed(feed);
-        return FeedDTO.of(feed);
+        return FeedWithoutEntriesDTO.of(feed, 0);
     }
 
     @Transactional(noRollbackFor = BaseException.class)
@@ -141,20 +152,21 @@ public class FeedService {
         feedFetchService.parsePageContent(syndFeed.getEntries().get(0));
     }
 
-    public PageableDTO<FeedDTO> searchFeeds(String searchString, Pageable pageRequest, SpringUserDetails userDetails) {
+    public PageableDTO<FeedWithoutEntriesDTO> searchFeeds(String searchString, Pageable pageRequest, SpringUserDetails userDetails) {
         Page<Feed> feedList = feedRepository.searchFeedsByUserUuid(userDetails.getUuid(), searchString, pageRequest);
         PagedModel<EntityModel<Feed>> pagedModel = pagedResourcesAssembler.toModel(feedList);
-        List<FeedDTO> feedDTOList = convertToFeedDTO(pagedModel);
-        return PageableDTO.of(pagedModel, feedDTOList);
+        List<FeedWithoutEntriesDTO> feedWithoutEntriesDTOList = convertToFeedDTO(pagedModel, userDetails);
+        return PageableDTO.of(pagedModel, feedWithoutEntriesDTOList);
     }
 
-    private List<FeedDTO> convertToFeedDTO(PagedModel<EntityModel<Feed>> pagedModel) {
+    private List<FeedWithoutEntriesDTO> convertToFeedDTO(PagedModel<EntityModel<Feed>> pagedModel, SpringUserDetails userDetails) {
         return pagedModel.getContent().stream()
                 .map(EntityModel::getContent)
                 .filter(Objects::nonNull)
-                .map(FeedDTO::of)
+                .map(feed -> FeedWithoutEntriesDTO.of(feed, getUnreadFeedEntries(feed.getUuid().toString(), userDetails)))
                 .toList();
     }
+
 
 
 }

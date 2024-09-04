@@ -2,9 +2,9 @@ package io.feedpulse.controller;
 
 
 import io.feedpulse.dto.response.EntryDTO;
-import io.feedpulse.dto.response.FeedDTO;
+import io.feedpulse.dto.response.FeedWithEntriesDTO;
+import io.feedpulse.dto.response.FeedWithoutEntriesDTO;
 import io.feedpulse.dto.response.PageableDTO;
-import io.feedpulse.model.Feed;
 import io.feedpulse.model.SpringUserDetails;
 import io.feedpulse.service.EntryService;
 import io.feedpulse.service.FeedService;
@@ -31,7 +31,7 @@ public class FeedController {
 
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.OK)
-    public PageableDTO<FeedDTO> getFeed(
+    public PageableDTO<FeedWithoutEntriesDTO> getFeed(
             @PageableDefault(sort = {"pubDate"}, direction = Sort.Direction.DESC) Pageable pageable,
             @AuthenticationPrincipal SpringUserDetails userDetails
     ) {
@@ -40,7 +40,8 @@ public class FeedController {
 
     @GetMapping(value = "/{uuid}", produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.OK)
-    public Feed getFeed(@PathVariable String uuid, @AuthenticationPrincipal SpringUserDetails userDetails) {
+    public FeedWithEntriesDTO getFeed(@PathVariable String uuid, @AuthenticationPrincipal SpringUserDetails userDetails) {
+        System.out.println("getFeed");
         return feedService.getFeed(uuid, userDetails);
     }
 
@@ -55,7 +56,7 @@ public class FeedController {
 
     @PostMapping()
     @ResponseStatus(HttpStatus.CREATED)
-    public FeedDTO addFeed(@RequestParam String feedUrl, @AuthenticationPrincipal SpringUserDetails userDetails) {
+    public FeedWithoutEntriesDTO addFeed(@RequestParam String feedUrl, @AuthenticationPrincipal SpringUserDetails userDetails) {
         return feedService.addFeed(feedUrl, userDetails);
     }
 

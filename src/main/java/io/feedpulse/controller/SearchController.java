@@ -1,7 +1,7 @@
 package io.feedpulse.controller;
 
 import io.feedpulse.dto.response.EntryDTO;
-import io.feedpulse.dto.response.FeedDTO;
+import io.feedpulse.dto.response.FeedWithoutEntriesDTO;
 import io.feedpulse.dto.response.PageableDTO;
 import io.feedpulse.model.SpringUserDetails;
 import io.feedpulse.service.SearchService;
@@ -33,7 +33,7 @@ public class SearchController {
     }
 
     @RequestMapping("/feeds")
-    public PageableDTO<FeedDTO> searchFeeds(
+    public PageableDTO<FeedWithoutEntriesDTO> searchFeeds(
             @RequestParam() String searchString,
             @PageableDefault(sort = {"pubDate"},direction = Sort.Direction.DESC) Pageable pageable,
             @AuthenticationPrincipal SpringUserDetails userDetails) {
