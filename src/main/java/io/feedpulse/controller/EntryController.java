@@ -15,6 +15,8 @@ import org.springframework.lang.NonNull;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping(path = "/entries", produces = "application/json")
 public class EntryController{
@@ -48,6 +50,14 @@ public class EntryController{
     public void updateEntry(@PathVariable String uuid, @RequestBody EntryInteractionUpdateDTO entry, @AuthenticationPrincipal SpringUserDetails springUserDetails) {
         entryService.updateEntry(uuid, entry.isRead(), entry.isFavorite(), entry.isBookmark(), springUserDetails);
     }
+
+    // batch edit
+    @ResponseStatus(HttpStatus.OK)
+    @RequestMapping(value = "/read", method = {RequestMethod.PATCH, RequestMethod.PUT})
+    public void readEntries(@RequestBody List<String> entries, @AuthenticationPrincipal SpringUserDetails springUserDetails) {
+        entryService.updateEntries(entries, springUserDetails);
+    }
+
 
     @ResponseStatus(HttpStatus.OK)
     @GetMapping("/favorites")

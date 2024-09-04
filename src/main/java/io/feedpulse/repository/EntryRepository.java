@@ -39,6 +39,9 @@ public interface EntryRepository extends JpaRepository<Entry, UUID> {
     @Query("SELECT e FROM Entry e JOIN e.feed f JOIN f.users u WHERE u.uuid = :userUuid AND e.uuid = :entryUuid")
     Optional<Entry> findEntryByUuidAndUsersUuid(UUID entryUuid, UUID userUuid);
 
+    @Query("SELECT e FROM Entry e JOIN e.feed f JOIN f.users u WHERE u.uuid = :userUuid AND e.uuid IN :entriesUuid")
+    List<Entry> findEntriesByUuidAndUsersUuid(List<UUID> entriesUuid, UUID userUuid);
+
     @Query("SELECT e FROM Entry e JOIN e.feed f JOIN f.users u WHERE u.id = :userId AND e.link = :link")
     Optional<Entry> findEntryByLinkAndUsersId(String link, Long userId);
 

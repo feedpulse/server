@@ -1,6 +1,7 @@
 package io.feedpulse.service;
 
 import com.rometools.rome.feed.synd.SyndEntry;
+import io.feedpulse.dto.request.EntryInteractionUpdateDTO;
 import io.feedpulse.dto.response.EntryDTO;
 import io.feedpulse.dto.response.PageableDTO;
 import io.feedpulse.exceptions.common.InvalidUuidException;
@@ -13,9 +14,7 @@ import io.github.cdimascio.essence.EssenceResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PagedResourcesAssembler;
 import org.springframework.hateoas.EntityModel;
 import org.springframework.hateoas.PagedModel;
@@ -105,6 +104,15 @@ public class EntryService {
         return entry.get();
     }
 
+    private @NonNull List<Entry> getEntriesFromDB(@Nullable List<UUID> uuids, SpringUserDetails springUserDetails) {
+//        uuidString.forEach(uuid -> {
+//            if (!UuidValidator.isValid(uuid)) throw new InvalidUuidException(uuid);
+//        });
+//        List<UUID> uuids = uuidString.stream().map(UUID::fromString).toList();
+        List<Entry> entries = entryRepository.findEntriesByUuidAndUsersUuid(uuids, springUserDetails.getUuid());
+        return entries;
+    }
+
     public @NonNull EntryDTO getEntry(@Nullable String uuidString, SpringUserDetails springUserDetails) {
         Entry entry = getEntryFromDB(uuidString, springUserDetails);
         UserEntryInteraction userEntryInteraction = userEntryInteractionRepository
@@ -132,6 +140,25 @@ public class EntryService {
         if (favorite != null) userEntryInteraction.setFavorite(favorite);
         if (bookmark != null) userEntryInteraction.setBookmark(bookmark);
         userEntryInteractionRepository.save(userEntryInteraction);
+    }
+
+    public void updateEntries(List<String> uuidStrings, SpringUserDetails springUserDetails) {
+        User user = userService.getUserByUuid(springUserDetails.getUuid());
+        List<UUID> uuids = Collections.emptyList();
+        uuidStrings.forEach(uuid -> {
+            if (!UuidValidator.isValid(uuid)) throw new InvalidUuidException(uuid);
+            uuids.add(UUID.fromString(uuid));
+        });
+        List<Entry> entries = getEntriesFromDB(uuids, springUserDetails);
+
+        // TODO: performance increase with raw SQL
+        entries.forEach(entry -> {
+            UserEntryInteraction userEntryInteraction = userEntryInteractionRepository
+                    .findByUserUuidAndEntryUuid(springUserDetails.getUuid(), entry.getUuid())
+                    .orElse(new UserEntryInteraction(user, entry));
+            userEntryInteraction.setRead(true);
+            userEntryInteractionRepository.save(userEntryInteraction);
+        });
     }
 
     public EntryDTO toEntryDTO(@NonNull Entry entry, @NonNull UUID userUuid) {
