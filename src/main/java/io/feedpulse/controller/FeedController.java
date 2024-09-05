@@ -40,9 +40,17 @@ public class FeedController {
 
     @GetMapping(value = "/{uuid}", produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.OK)
+    // TODO: maybe without entries?
     public FeedWithEntriesDTO getFeed(@PathVariable String uuid, @AuthenticationPrincipal SpringUserDetails userDetails) {
         System.out.println("getFeed");
         return feedService.getFeed(uuid, userDetails);
+    }
+
+    // batch edit
+    @ResponseStatus(HttpStatus.OK)
+    @RequestMapping(value = "/{uuid}/read", method = {RequestMethod.PATCH})
+    public void readFeedEntries(@PathVariable String uuid, @AuthenticationPrincipal SpringUserDetails springUserDetails) {
+        feedService.setReadFeedEntries(uuid, springUserDetails);
     }
 
     @ResponseStatus(HttpStatus.OK)

@@ -9,13 +9,14 @@ import io.feedpulse.exceptions.BaseException;
 import io.feedpulse.exceptions.common.InvalidUuidException;
 import io.feedpulse.exceptions.entity.FeedNotFoundException;
 import io.feedpulse.exceptions.parsing.MissingFeedEntriesException;
-import io.feedpulse.model.Feed;
-import io.feedpulse.model.SpringUserDetails;
-import io.feedpulse.model.User;
+import io.feedpulse.model.*;
+import io.feedpulse.repository.EntryRepository;
 import io.feedpulse.repository.FeedRepository;
+import io.feedpulse.repository.UserEntryInteractionRepository;
 import io.feedpulse.validation.UuidValidator;
-import jakarta.validation.Valid;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PagedResourcesAssembler;
 import org.springframework.hateoas.EntityModel;
@@ -23,10 +24,7 @@ import org.springframework.hateoas.PagedModel;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 public class FeedService {
@@ -36,14 +34,18 @@ public class FeedService {
     private final FeedFetchService feedFetchService;
     private final UserEntryInteractionService userEntryInteractionService;
     private final PagedResourcesAssembler<Feed> pagedResourcesAssembler;
+    private final EntryRepository entryRepository;
+    private final UserEntryInteractionRepository userEntryInteractionRepository;
 
 
-    public FeedService(FeedRepository feedRepository, UserService userService, FeedFetchService feedFetchService, UserEntryInteractionService userEntryInteractionService, PagedResourcesAssembler<Feed> pagedResourcesAssembler) {
+    public FeedService(FeedRepository feedRepository, UserService userService, FeedFetchService feedFetchService, UserEntryInteractionService userEntryInteractionService, PagedResourcesAssembler<Feed> pagedResourcesAssembler, EntryRepository entryRepository, UserEntryInteractionRepository userEntryInteractionRepository) {
         this.feedRepository = feedRepository;
         this.userService = userService;
         this.feedFetchService = feedFetchService;
         this.userEntryInteractionService = userEntryInteractionService;
         this.pagedResourcesAssembler = pagedResourcesAssembler;
+        this.entryRepository = entryRepository;
+        this.userEntryInteractionRepository = userEntryInteractionRepository;
     }
 
     // WARNING: this method is only for internal use and should not be exposed to the frontend
@@ -71,13 +73,52 @@ public class FeedService {
         return FeedWithEntriesDTO.of(feed.get(), unreadCount);
     }
 
-    private Integer getUnreadFeedEntries(@Valid String uuidString, SpringUserDetails userDetails) {
+    private Integer getUnreadFeedEntries(String uuidString, SpringUserDetails userDetails) {
         if (!UuidValidator.isValid(uuidString)) throw new InvalidUuidException(uuidString);
         UUID feedUuid = UUID.fromString(uuidString);
         Integer unreadCount = feedRepository.countUnreadFeedEntries(userDetails.getUuid(), feedUuid);
-        System.out.println("\n\n\n\n\n");
-        System.out.println("Unread count: " + unreadCount);
         return unreadCount;
+    }
+
+    @Transactional(noRollbackFor = BaseException.class)
+    public void setReadFeedEntries(String uuidString, SpringUserDetails userDetails) {
+        if (!UuidValidator.isValid(uuidString)) throw new InvalidUuidException(uuidString);
+        UUID feedUuid = UUID.fromString(uuidString);
+        PageRequest pageRequest = PageRequest.of(0, 100);
+        Page<UUID> feedEntriesUuid =  feedRepository.getUuidOfUnreadFeedEntries(userDetails.getUuid(), feedUuid, pageRequest);
+
+        /// Base condition: loop until there are no more pages to process
+        while (feedEntriesUuid != null && !feedEntriesUuid.isEmpty()) {
+            Set<UserEntryInteraction> ueiList = new HashSet<>();
+
+            // Iterate over the current page of UUIDs
+            for (UUID uuid : feedEntriesUuid) {
+                Entry entry = entryRepository.findById(uuid).orElseThrow(() -> new EntityNotFoundException("Entry not found"));
+                UserEntryInteraction uei = new UserEntryInteraction(userService.getUserByUuid(userDetails.getUuid()), entry);
+                uei.setRead(true);
+                ueiList.add(uei);
+            }
+
+            /**
+             * Check if there are more pages to process
+             * If the check is done after saving the interactions, the pagination will fail and the loop will terminate prematurely
+             */
+            boolean hasNextPage = feedEntriesUuid.hasNext();
+
+            // Save collected interactions in the current batch
+            if (!ueiList.isEmpty()) {
+                userEntryInteractionRepository.saveAll(ueiList);
+            }
+
+            // Fetch the next page of unread entries
+            if (hasNextPage) {
+                feedEntriesUuid = feedRepository.getUuidOfUnreadFeedEntries(userDetails.getUuid(), feedUuid, pageRequest);
+                feedEntriesUuid.forEach(System.out::println);
+            } else {
+                // If no next page, terminate the loop
+                break;
+            }
+        }
     }
 
     @Transactional(noRollbackFor = BaseException.class)
@@ -166,7 +207,5 @@ public class FeedService {
                 .map(feed -> FeedWithoutEntriesDTO.of(feed, getUnreadFeedEntries(feed.getUuid().toString(), userDetails)))
                 .toList();
     }
-
-
 
 }

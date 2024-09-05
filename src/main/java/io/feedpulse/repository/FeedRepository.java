@@ -65,4 +65,17 @@ public interface FeedRepository extends JpaRepository<Feed, UUID> {
      *     private Entry entry;
      * }
      */
+
+    @NonNull
+    @Query("SELECT (e.uuid) " +
+            "FROM Feed f " +
+            "JOIN f.entries e " +
+            "JOIN f.users uf " +
+            "JOIN User u ON uf.uuid = u.uuid " +
+            "LEFT JOIN e.userEntryInteractions uei ON uei.user.uuid = :userUuid " + // LEFT JOIN to include entries without interaction
+            "WHERE u.uuid = :userUuid " +
+            "AND (uei.read IS NULL OR uei.read = false) " + // Handling null reads (no interaction yet)
+            "AND f.uuid = :feedUuid")
+    Page<UUID> getUuidOfUnreadFeedEntries(@Param("userUuid") UUID userUuid, @Param("feedUuid") UUID feedUuid, Pageable pageable);
+
 }
