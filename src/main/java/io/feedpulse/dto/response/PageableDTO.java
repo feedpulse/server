@@ -1,6 +1,5 @@
 package io.feedpulse.dto.response;
 
-import io.feedpulse.model.Entry;
 import org.springframework.hateoas.EntityModel;
 import org.springframework.hateoas.Link;
 import org.springframework.hateoas.LinkRelation;
@@ -18,7 +17,7 @@ public record PageableDTO<T>(
         long totalPages,
         Links links,
         List<T> content
-) implements Serializable {
+) implements Serializable, PageableDataDTO<T> {
 
     public static <T, S> PageableDTO<T> of(PagedModel<EntityModel<S>> pagedModel, List<T> values) {
         try {

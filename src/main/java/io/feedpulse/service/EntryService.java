@@ -1,9 +1,10 @@
 package io.feedpulse.service;
 
 import com.rometools.rome.feed.synd.SyndEntry;
-import io.feedpulse.dto.request.EntryInteractionUpdateDTO;
+import io.feedpulse.controller.EntryController;
 import io.feedpulse.dto.response.EntryDTO;
 import io.feedpulse.dto.response.PageableDTO;
+import io.feedpulse.dto.response.PageableDataDTO;
 import io.feedpulse.exceptions.common.InvalidUuidException;
 import io.feedpulse.exceptions.entity.EntryNotFoundException;
 import io.feedpulse.model.*;
@@ -17,7 +18,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PagedResourcesAssembler;
 import org.springframework.hateoas.EntityModel;
+import org.springframework.hateoas.Link;
 import org.springframework.hateoas.PagedModel;
+import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder;
 import org.springframework.lang.NonNull;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
@@ -78,20 +81,57 @@ public class EntryService {
         entryRepository.delete(entry);
     }
 
-    public PageableDTO<EntryDTO> getFeedEntries(String feedUuidString, Pageable pageRequest, SpringUserDetails userDetails) {
+    public PageableDTO<EntryDTO> getFeedEntries(String feedUuidString, boolean onlyUnread, Pageable pageRequest, SpringUserDetails userDetails) {
         if (!UuidValidator.isValid(feedUuidString)) throw new InvalidUuidException(feedUuidString);
         UUID feedUuid = UUID.fromString(feedUuidString);
-        Page<Entry> pageOfEntries = entryRepository.findEntriesByFeedUuidAndUsersUuid(feedUuid, userDetails.getUuid(), pageRequest);
+        Page<Entry> pageOfEntries;
+                if (onlyUnread) {
+                    pageOfEntries = entryRepository.findUnreadEntriesByFeedUuidAndUsersUuid(feedUuid, userDetails.getUuid(), pageRequest);
+                } else {
+                    pageOfEntries = entryRepository.findEntriesByFeedUuidAndUsersUuid(feedUuid, userDetails.getUuid(), pageRequest);
+                }
         PagedModel<EntityModel<Entry>> pagedModel = pagedResourcesAssembler.toModel(pageOfEntries);
+        List<Link> links = updateLinks(pagedModel, onlyUnread, pageRequest);
+        pagedModel.add(links);
+
         List<EntryDTO> entryDTOs = convertToEntryDTOs(pagedModel, userDetails);
         return PageableDTO.of(pagedModel, entryDTOs);
     }
 
-    public PageableDTO<EntryDTO> getFeedEntries(Pageable pageRequest, SpringUserDetails userDetails) {
-        Page<Entry> entryList = entryRepository.findEntriesByUsersUuid(userDetails.getUuid(), pageRequest);
+    public PageableDataDTO<EntryDTO> getFeedEntries(boolean onlyUnread, Pageable pageRequest, SpringUserDetails userDetails) {
+        Page<Entry> entryList;
+        if (onlyUnread) {
+            entryList = entryRepository.findUnreadEntriesByUsersUuid(userDetails.getUuid(), pageRequest);
+        } else {
+            entryList = entryRepository.findEntriesByUsersUuid(userDetails.getUuid(), pageRequest);
+        }
+
         PagedModel<EntityModel<Entry>> pagedModel = pagedResourcesAssembler.toModel(entryList);
+        List<Link> links = updateLinks(pagedModel, onlyUnread, pageRequest);
+        pagedModel.add(links);
+
         List<EntryDTO> entryDTOs = convertToEntryDTOs(pagedModel, userDetails);
         return PageableDTO.of(pagedModel, entryDTOs);
+
+    }
+
+
+    /**
+     * Update the links in the paged model to point to the correct endpoint
+     * @param pagedModel the paged model to update
+     * @param onlyUnread whether only unread entries are requested
+     * @param pageRequest the page request
+     * @return the updated links
+     */
+    private List<Link> updateLinks(PagedModel<EntityModel<Entry>> pagedModel, boolean onlyUnread, Pageable pageRequest) {
+        List<Link> links = new ArrayList<>();
+        pagedModel.getLinks().forEach(link -> {
+            String updatedHref = WebMvcLinkBuilder.linkTo(
+                            WebMvcLinkBuilder.methodOn(EntryController.class).getEntries(onlyUnread, pageRequest, null))
+                    .toUri().toString();
+            links.add(Link.of(updatedHref, link.getRel()));
+        });
+        return links;
     }
 
     private @NonNull Entry getEntryFromDB(@Nullable String uuidString, SpringUserDetails springUserDetails) {

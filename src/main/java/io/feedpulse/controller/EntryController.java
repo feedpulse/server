@@ -3,6 +3,7 @@ package io.feedpulse.controller;
 import io.feedpulse.dto.request.EntryInteractionUpdateDTO;
 import io.feedpulse.dto.response.EntryDTO;
 import io.feedpulse.dto.response.PageableDTO;
+import io.feedpulse.dto.response.PageableDataDTO;
 import io.feedpulse.model.SpringUserDetails;
 import io.feedpulse.service.EntryService;
 import org.slf4j.Logger;
@@ -31,12 +32,13 @@ public class EntryController{
 
     @ResponseStatus(HttpStatus.OK)
     @GetMapping
-    public PageableDTO<EntryDTO> getEntries(
+    public PageableDataDTO<EntryDTO> getEntries(
+            @RequestParam(required = false, defaultValue = "false") boolean onlyUnread,
             // TODO(V1): re-set sort to pubDate in the service layer, so that the user can sort by other fields
             @PageableDefault(sort = {"pubDate"},direction = Sort.Direction.DESC) Pageable pageable,
             @AuthenticationPrincipal SpringUserDetails userDetails
     ) {
-        return entryService.getFeedEntries(pageable, userDetails);
+        return entryService.getFeedEntries(onlyUnread, pageable, userDetails);
     }
 
     @ResponseStatus(HttpStatus.OK)

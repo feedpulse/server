@@ -57,9 +57,10 @@ public class FeedController {
     @GetMapping(value = "/{uuid}/entries", produces = MediaType.APPLICATION_JSON_VALUE)
     public PageableDTO<EntryDTO> getFeedEntries(
             @PathVariable String uuid,
+            @RequestParam(required = false, defaultValue = "false") boolean onlyUnread,
             @PageableDefault(sort = {"pubDate"}, direction = Sort.Direction.DESC) Pageable pageable,
             @AuthenticationPrincipal SpringUserDetails userDetails) {
-        return entryService.getFeedEntries(uuid, pageable, userDetails);
+        return entryService.getFeedEntries(uuid, onlyUnread, pageable, userDetails);
     }
 
     @PostMapping()

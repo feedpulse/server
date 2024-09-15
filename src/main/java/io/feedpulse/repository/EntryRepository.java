@@ -27,11 +27,17 @@ public interface EntryRepository extends JpaRepository<Entry, UUID> {
     @Query("SELECT e FROM Entry e JOIN e.feed f JOIN f.users u WHERE u.uuid = :userUuid AND f.uuid = :feedUuid")
     Page<Entry> findEntriesByFeedUuidAndUsersUuid(UUID feedUuid, UUID userUuid, Pageable pageable);
 
+    @Query("SELECT e FROM Entry e JOIN e.feed f JOIN f.users u LEFT JOIN e.userEntryInteractions uei ON uei.user.uuid = :userUuid WHERE u.uuid = :userUuid AND f.uuid = :feedUuid AND (uei.read IS NULL OR uei.read = false)")
+    Page<Entry> findUnreadEntriesByFeedUuidAndUsersUuid(UUID feedUuid, UUID userUuid, Pageable pageable);
+
     @Query("SELECT e FROM Entry e JOIN e.feed f JOIN f.users u WHERE u.id = :userId")
     Page<Entry> findEntriesByUsersId(Long userId, Pageable pageable);
 
     @Query("SELECT e FROM Entry e JOIN e.feed f JOIN f.users u WHERE u.uuid = :userUuid")
     Page<Entry> findEntriesByUsersUuid(UUID userUuid, Pageable pageable);
+
+    @Query("SELECT e FROM Entry e JOIN e.feed f JOIN f.users u LEFT JOIN e.userEntryInteractions uei ON uei.user.uuid = :userUuid WHERE u.uuid = :userUuid AND (uei.read IS NULL OR uei.read = false)")
+    Page<Entry> findUnreadEntriesByUsersUuid(UUID userUuid, Pageable pageable);
 
     @Query("SELECT e FROM Entry e JOIN e.feed f JOIN f.users u WHERE u.id = :userId AND e.uuid = :entryUuid")
     Optional<Entry> findEntryByUuidAndUsersId(UUID entryUuid, Long userId);
